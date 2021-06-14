@@ -1,0 +1,25 @@
+{
+  "name": "maybe-next-winners-twt-codejam",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node ./node_modules/rollup/dist/bin/rollup -c -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codingwith3dv/maybe-next-winners-twt-codejam.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/codingwith3dv/maybe-next-winners-twt-codejam/issues"
+  },
+  "homepage": "https://github.com/codingwith3dv/maybe-next-winners-twt-codejam#readme",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^13.0.0",
+    "rollup": "^2.51.2",
+    "three": "^0.129.0"
+  }
+}
