@@ -68,21 +68,15 @@ const initShader = (
 }
 
 const initBuffer = (
-  gl
+  gl,
+  positions
 ) => {
   const buffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
   
-  const sbuffer = [
-    -1.0, 1.0,
-    1.0, 1.0,
-    -1.0, -1.0,
-    1.0, -1.0
-  ]
-  
   gl.bufferData(
     gl.ARRAY_BUFFER,
-    new Float32Array(sbuffer),
+    new Float32Array(positions),
     gl.STATIC_DRAW
   );
   
@@ -164,7 +158,13 @@ const mainLoop = () => {
     },
   };
   
-  const buffers = initBuffer(gl);
+  let sbuffer = [
+      -1.5, -0.5,
+      -0.5, -0.5,
+      -1.5, 0.5,
+      -0.5,  0.5
+    ]
+  let buffers = initBuffer(gl, sbuffer);
   render(gl, programInfo, buffers);
 }
 
