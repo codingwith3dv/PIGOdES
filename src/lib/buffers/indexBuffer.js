@@ -18,7 +18,7 @@ export default function IndexBuffer(
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, id);
   };
   this.disconnectIndexBuffer = () => {
-    gl.deleteBuffer(id);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
   };
   this.getCount = () => {
     return _count;
