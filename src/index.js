@@ -1,12 +1,16 @@
 import {
   CreateShader
-} from '../lib/glUtils.js'
-import IndexBuffer from './buffers/indexBuffer.js'
-import VertexBuffer from './buffers/vertexBuffer.js'
+} from '../lib/glUtils.js';
+import IndexBuffer from './buffers/indexBuffer.js';
+import VertexBuffer from './buffers/vertexBuffer.js';
+import {
+  VertexArray,
+  VertexBufferLayout
+}from './vertex-array/vertexArray.js';
 
 const canvas = document.getElementById('canvas');
-const gl = canvas.getContext('webgl') ??
-  canvas.getContext('experimental-webgl');
+const gl = canvas.getContext('webgl2')
+  // ?? canvas.getContext('experimental-webgl2');
 
 const c = (
   val = 0
@@ -25,42 +29,30 @@ function mainLoop() {
     0, 1, 2,
     2, 3, 0
   ];
-
-  let vb = new VertexBuffer(
-    gl,
-    new Float32Array(positions)
-  );
-    
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(
-    0,
-    2,
-    gl.FLOAT,
-    false,
-    8,
-    0
-  );
   
-  let ib = new IndexBuffer(
-    gl,
-    new Uint16Array(indices),
-    6
-  );
+  let va = new VertexArray(gl);
+  let vb = new VertexBuffer(gl, new Float32Array(positions));
+  let vbl = new VertexBufferLayout(gl);
+  vbl.pushBack(2);
+  va.addBuffer(gl, vb, vbl);
+  
+  let ib = new IndexBuffer(gl, new Uint16Array(indices), 6);
   
   let vSource =
-    `
-    attribute vec2 a_pos;
+    `#version 300 es
+    in vec2 a_pos;
     void main() {
       gl_Position = vec4(a_pos, 0.0, 1.0);
     }
     `;
 
   let fSource =
-    `
+    `#version 300 es
     precision highp float;
     uniform vec4 u_Color;
+    out vec4 color;
     void main() {
-      gl_FragColor = u_Color;
+      color = u_Color;
     }
     `;
     
@@ -77,15 +69,18 @@ function mainLoop() {
   
   gl.uniform4f(
     u_location,
-    1.0,
-    0.0,
-    0.0,
+    0.2,
+    0.6,
+    0.8,
     1.0
   ); 
   
   const render = () => {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
+    va.connectVertexArray();
+    ib.connectIndexBuffer();
+    
     gl.drawElements(
       gl.TRIANGLES,
       6,
