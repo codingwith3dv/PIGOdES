@@ -53,8 +53,6 @@ function Shader(
       var info = gl.getProgramInfoLog(program);
       throw new Error('Could not compile WebGL program. \n\n' + info);
     }
-
-    gl.useProgram(program);
     return program;
   }
   

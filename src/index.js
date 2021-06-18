@@ -59,6 +59,7 @@ function mainLoop() {
     vSource,
     fSource
   );
+  shader.connectShader();
   
   shader.setUniform4f(
     gl,
