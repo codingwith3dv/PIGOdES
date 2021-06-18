@@ -1,0 +1,48 @@
+
+    .c1 {
+
+        position: absolute;
+        left: 5%;
+      }
+      .c2 {
+  
+        position: absolute;
+        left: 6%;
+        top: 8%;
+      }
+      .c3 {
+  
+        background: rgb(255, 255, 255);
+        position: absolute;
+        left: 20%;
+        top: 9%;
+      }
+      .c4 {
+  
+        position: absolute;
+        left:20%;
+      }
+      .c5{
+  
+        position: absolute;
+        left:22%;
+        top: 19%;
+      }
+      .c6 {
+  
+        position: absolute;
+        left:25%;
+        top: 29%;
+      }
+      .c7 {
+  
+        position: absolute;
+        left:29%;
+        top: 38%;
+      }
+  #ursaminor{
+      position: absolute;
+      top:40%;
+      left: 11%;
+      font-size: 30px;
+  }
