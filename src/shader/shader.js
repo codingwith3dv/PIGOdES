@@ -4,12 +4,19 @@ function Shader(
   fSource
 ) {
   let id = 0;
+  let uniformLocationCache = new Map();
   let getLocation = (shader, name) => {
-    return gl.getUniformLocation(
+    if (uniformLocationCache.has(name)) {
+      return uniformLocationCache.get(name);
+    }
+    let u_loc = gl.getUniformLocation(
       shader,
       name
     );
+    uniformLocationCache.set(name, u_loc);
+    return u_loc;
   }
+  
   let CompileShader = function(
     gl,
     type,
