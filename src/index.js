@@ -1,12 +1,10 @@
-import {
-  CreateShader
-} from '../lib/glUtils.js';
 import IndexBuffer from './buffers/indexBuffer.js';
 import VertexBuffer from './buffers/vertexBuffer.js';
 import {
   VertexArray,
   VertexBufferLayout
 }from './vertex-array/vertexArray.js';
+import Shader from './shader/shader.js'
 
 const canvas = document.getElementById('canvas');
 const gl = canvas.getContext('webgl2')
@@ -56,24 +54,20 @@ function mainLoop() {
     }
     `;
     
-  let shader = CreateShader(
+  let shader = new Shader(
     gl,
     vSource,
     fSource
   );
   
-  let u_location = gl.getUniformLocation(
-    shader,
-    'u_Color'
-  );
-  
-  gl.uniform4f(
-    u_location,
+  shader.setUniform4f(
+    gl,
+    'u_Color',
     0.2,
     0.6,
     0.8,
     1.0
-  ); 
+  );
   
   const render = () => {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
