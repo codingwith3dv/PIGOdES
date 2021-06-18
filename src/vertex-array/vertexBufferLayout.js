@@ -13,7 +13,7 @@ export default function VertexBufferLayout(
       normalised: false
     });
     stride += 4 * count;
-  }
+  };
   this.getElements = () => {
     return elements;
   };

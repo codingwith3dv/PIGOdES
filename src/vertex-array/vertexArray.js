@@ -1,4 +1,4 @@
-import VertexBufferLayout from './vertexBufferLayout.js'
+import VertexBufferLayout from './vertexBufferLayout.js';
 
 function VertexArray(gl) {
   let id = gl.createVertexArray();
@@ -36,4 +36,4 @@ function VertexArray(gl) {
 export {
   VertexBufferLayout,
   VertexArray
-}
+};

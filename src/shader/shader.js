@@ -15,7 +15,7 @@ function Shader(
     );
     uniformLocationCache.set(name, u_loc);
     return u_loc;
-  }
+  };
   
   let CompileShader = function(
     gl,
@@ -96,4 +96,4 @@ function Shader(
 
 export {
   Shader as default
-}
+};
