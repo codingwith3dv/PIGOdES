@@ -1,11 +1,11 @@
-import IndexBuffer from './lib/buffers/indexBuffer.js';
-import VertexBuffer from './lib/buffers/vertexBuffer.js';
+import IndexBuffer from './lib/gl/buffers/indexBuffer.js';
+import VertexBuffer from './lib/gl/buffers/vertexBuffer.js';
 import {
   VertexArray,
   VertexBufferLayout
-}from './lib/vertex-array/vertexArray.js';
-import Shader from './lib/shader/shader.js'
-import Renderer from './lib/renderer/renderer.js'
+}from './lib/gl/vertex-array/vertexArray.js';
+import Shader from './lib/gl/shader/shader.js'
+import Renderer from './lib/gl/renderer/renderer.js'
 
 const canvas = document.getElementById('canvas');
 const gl = canvas.getContext('webgl2')
@@ -19,29 +19,50 @@ const c = (
 
 function mainLoop() {
   let positions = [
-    -0.5, -0.5,
-     0.5, -0.5,
-     0.5,  0.5,
-    -0.5,  0.5
+    // left column
+    0, 0, 0,
+    30, 0, 0,
+    0, 150, 0,
+    0, 150, 0,
+    30, 0, 0,
+    30, 150, 0,
+    
+    // top rung
+    30, 0, 0,
+    100, 0, 0,
+    30, 30, 0,
+    30, 30, 0,
+    100, 0, 0,
+    100, 30, 0,
+    
+    // middle rung
+    30, 60, 0,
+    67, 60, 0,
+    30, 90, 0,
+    30, 90, 0,
+    67, 60, 0,
+    67, 90, 0
   ]
   let indices = [
-    0, 1, 2,
-    2, 3, 0
+    0, 1, 2, 3, 4, 5,
+    6, 7, 8, 9, 10, 11,
+    12, 13, 14, 15, 16, 17
   ];
   
   let va = new VertexArray(gl);
   let vb = new VertexBuffer(gl, new Float32Array(positions));
   let vbl = new VertexBufferLayout(gl);
-  vbl.pushBack(2);
+  vbl.pushBack(3);
   va.addBuffer(gl, vb, vbl);
   
   let ib = new IndexBuffer(gl, new Uint16Array(indices), 6);
   
   let vSource =
     `#version 300 es
-    in vec2 a_pos;
+    in vec4 a_pos;
+    uniform mat4 u_matrix;
     void main() {
-      gl_Position = vec4(a_pos, 0.0, 1.0);
+      gl_Position = u_matrix * a_pos;
     }
     `;
 
