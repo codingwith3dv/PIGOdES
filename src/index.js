@@ -1,11 +1,11 @@
-import IndexBuffer from './buffers/indexBuffer.js';
-import VertexBuffer from './buffers/vertexBuffer.js';
+import IndexBuffer from './lib/buffers/indexBuffer.js';
+import VertexBuffer from './lib/buffers/vertexBuffer.js';
 import {
   VertexArray,
   VertexBufferLayout
-}from './vertex-array/vertexArray.js';
-import Shader from './shader/shader.js'
-import Renderer from './renderer/renderer.js'
+}from './lib/vertex-array/vertexArray.js';
+import Shader from './lib/shader/shader.js'
+import Renderer from './lib/renderer/renderer.js'
 
 const canvas = document.getElementById('canvas');
 const gl = canvas.getContext('webgl2')
@@ -77,9 +77,25 @@ function mainLoop() {
   ib.disconnectIndexBuffer();
   
   let renderer = new Renderer();
+  let r = 0.2;
+  let increment = 0.01;
   
   const render = () => {
     renderer.clear(gl);
+    shader.connectShader();
+    shader.setUniform4f(
+      gl,
+      'u_Color',
+      r,
+      0.6,
+      0.8,
+      1.0
+    );
+    
+    r += increment;
+    if (r > 1.0 || r < 0.0) {
+      increment = -increment;
+    }
     
     renderer.draw(
       gl,
