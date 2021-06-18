@@ -5,6 +5,7 @@ import {
   VertexBufferLayout
 }from './vertex-array/vertexArray.js';
 import Shader from './shader/shader.js'
+import Renderer from './renderer/renderer.js'
 
 const canvas = document.getElementById('canvas');
 const gl = canvas.getContext('webgl2')
@@ -75,19 +76,16 @@ function mainLoop() {
   vb.disconnectVertexBuffer();
   ib.disconnectIndexBuffer();
   
+  let renderer = new Renderer();
+  
   const render = () => {
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    renderer.clear(gl);
     
-    shader.connectShader();
-    va.connectVertexArray();
-    ib.connectIndexBuffer();
-    
-    gl.drawElements(
-      gl.TRIANGLES,
-      6,
-      gl.UNSIGNED_SHORT,
-      null
+    renderer.draw(
+      gl,
+      va,
+      ib,
+      shader
     );
     
     window.requestAnimationFrame(render);
