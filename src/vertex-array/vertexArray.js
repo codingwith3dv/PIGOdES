@@ -7,7 +7,7 @@ function VertexArray(gl) {
     gl.bindVertexArray(id);
   };
   this.disconnectVertexArray = () => {
-    gl.bindVertexArray(0);
+    gl.bindVertexArray(null);
   };
   
   this.addBuffer = (

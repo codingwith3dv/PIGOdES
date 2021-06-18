@@ -16,6 +16,6 @@ export default function VertexBuffer (
     gl.bindBuffer(gl.ARRAY_BUFFER, id);
   };
   this.disconnectVertexBuffer = () => {
-    gl.deleteBuffer(id);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
   }
 }

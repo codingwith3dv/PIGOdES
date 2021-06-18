@@ -70,10 +70,18 @@ function mainLoop() {
     1.0
   );
   
+  va.disconnectVertexArray();
+  shader.disconnectShader();
+  vb.disconnectVertexBuffer();
+  ib.disconnectIndexBuffer();
+  
   const render = () => {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
+    
     va.connectVertexArray();
+    shader.connectShader()
+    vb.connectVertexBuffer();
     ib.connectIndexBuffer();
     
     gl.drawElements(

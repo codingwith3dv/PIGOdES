@@ -67,7 +67,7 @@ function Shader(
     gl.useProgram(id);
   };
   this.disconnectShader = () => {
-    gl.useProgram(0);
+    gl.useProgram(null);
   };
   this.setUniform4f = (
     gl,
