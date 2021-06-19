@@ -68,7 +68,6 @@ function Shader(
     vSource,
     fSource
   );
-  
 
   this.connectShader = () => {
     gl.useProgram(id);
@@ -92,6 +91,18 @@ function Shader(
       v3
     );
   };
+  
+  this.setUniformMatrix4fv = (
+    gl,
+    name,
+    matrix
+  ) => {
+    gl.uniformMatrix4fv(
+      getLocation(id, name),
+      false,
+      matrix
+    );
+  }
 }
 
 export {

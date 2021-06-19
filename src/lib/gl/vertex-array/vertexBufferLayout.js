@@ -5,12 +5,14 @@ export default function VertexBufferLayout(
   let stride = 0;
   
   this.pushBack = (
-    count
+    count,
+    type,
+    normalised
   ) => {
     elements.push({
-      type: gl.FLOAT,
+      type,
       count,
-      normalised: false
+      normalised
     });
     stride += 4 * count;
   };
