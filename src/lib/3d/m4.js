@@ -147,7 +147,7 @@ var m4 = {
         -1, 1, 0, 1,
       ];
   },
-  
+
   makeZToWMatrix: function(fudgeFactor) {
     return [
       1, 0, 0, 0,
@@ -159,3 +159,48 @@ var m4 = {
 };
 
 export default m4
+
+
+
+
+
+
+
+
+
+var mat4 = {
+  create() {
+    return [
+      1, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1
+    ];
+  },
+  multiplyPoint(matrix, point) {
+    let result = new Array(4);
+    for (let i = 0; i < 4; i++) {
+      result[i] =
+        (point[0] * matrix[i + 0]) +
+        (point[1] * matrix[i + 4]) +
+        (point[2] * matrix[i + 8]) +
+        (point[3] * matrix[i + 12]);
+    }
+    return result;
+  },
+
+  multiplyMatrix(out, a, b) {
+    let sum = 0.0;
+    let i, j, k;
+    for (i = 0; i < 4; i++) {
+      for (j = 0; j < 4; j++) {
+        for (k = 0; k < 4; k++) {
+          sum = sum + a[i * 4 + k] * b[k * 4 + j];
+        }
+        out[i * 4 + j] = sum;
+        sum = 0.0;
+      }
+    }
+    return out;
+  },
+};

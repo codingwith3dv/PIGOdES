@@ -20,30 +20,69 @@ const c = (
 
 function mainLoop() {
   let positions = [
-    -50, -50, 0,
-     50, -50, 0,
-     50,  50, 0,
-    -50,  50, 0
+    -1.0, -1.0, -1.0,
+    -1.0, -1.0, 1.0,
+    -1.0, 1.0, 1.0,
+    1.0, 1.0, -1.0,
+    -1.0, -1.0, -1.0,
+    -1.0, 1.0, -1.0,
+
+    1.0, -1.0, 1.0,
+    -1.0, -1.0, -1.0,
+    1.0, -1.0, -1.0,
+    1.0, 1.0, -1.0,
+    1.0, -1.0, -1.0,
+    -1.0, -1.0, -1.0,
+
+    -1.0, -1.0, -1.0,
+    -1.0, 1.0, 1.0,
+    -1.0, 1.0, -1.0,
+    1.0, -1.0, 1.0,
+    -1.0, -1.0, 1.0,
+    -1.0, -1.0, -1.0,
+
+    -1.0, 1.0, 1.0,
+    -1.0, -1.0, 1.0,
+    1.0, -1.0, 1.0,
+    1.0, 1.0, 1.0,
+    1.0, -1.0, -1.0,
+    1.0, 1.0, -1.0,
+
+    1.0, -1.0, -1.0,
+    1.0, 1.0, 1.0,
+    1.0, -1.0, 1.0,
+    1.0, 1.0, 1.0,
+    1.0, 1.0, -1.0,
+    -1.0, 1.0, -1.0,
+
+    1.0, 1.0, 1.0,
+    -1.0, 1.0, -1.0,
+    -1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0,
+    -1.0, 1.0, 1.0,
+    1.0, -1.0, 1.0
   ]
   let indices = [
-    0, 1, 2, 2, 3, 0
   ];
+  for (var i = 0; i < 36; i++) {
+    indices.push(i)
+  }
 
   function radToDeg(r) {
     return r * 180 / Math.PI;
   }
-  
+
   function degToRad(d) {
     return d * Math.PI / 180;
   }
-  
+
   var translation = [0, 0, 0];
-  var rotation = [degToRad(40), degToRad(25), degToRad(325)];
-  var scale = [1, 1, 1];
+  var rotation = [degToRad(0), degToRad(0), degToRad(0)];
+  var scale = [50, 50, 50];
   var fudgeFactor = 1;
 
   var matrix = m4.makeZToWMatrix(fudgeFactor);
-  matrix = m4.multiply(matrix, m4.projection(gl.canvas.clientWidth, gl.canvas.clientHeight, 400));
+  matrix = m4.multiply(matrix, m4.projection(gl.canvas.clientWidth, gl.canvas.clientHeight, 600));
   matrix = m4.translate(matrix, translation[0], translation[1], translation[2]);
   matrix = m4.xRotate(matrix, rotation[0]);
   matrix = m4.yRotate(matrix, rotation[1]);
@@ -57,7 +96,7 @@ function mainLoop() {
   vbl.pushBack(3, gl.FLOAT, false);
   va.addBuffer(gl, vb, vbl);
 
-  let ib = new IndexBuffer(gl, new Uint16Array(indices), 6);
+  let ib = new IndexBuffer(gl, new Uint16Array(indices), indices.length);
 
   let vSource =
     `#version 300 es
@@ -90,13 +129,6 @@ function mainLoop() {
     vSource,
     fSource
   );
-  shader.connectShader();
-  shader.setUniformMatrix4fv(
-    gl,
-    'u_matrix',
-    matrix
-  );
-
 
   va.disconnectVertexArray();
   shader.disconnectShader();
@@ -105,7 +137,7 @@ function mainLoop() {
 
   let renderer = new Renderer();
   let angle = 0;
-  
+
   const render = () => {
     renderer.clear(gl);
     gl.viewport(0, 0, 600, 600);
@@ -113,16 +145,8 @@ function mainLoop() {
     shader.setUniformMatrix4fv(
       gl,
       'u_matrix',
-      matrix
+       matrix
     );
-    
-    angle += 0.01;
-    rotation[2] = degToRad(angle);
-    if(angle > 360) {
-      angle = 0;
-      rotation[2] = 0;
-    }
-    matrix = m4.zRotate(matrix, rotation[2]);
 
     renderer.draw(
       gl,
