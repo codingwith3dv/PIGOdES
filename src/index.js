@@ -17,7 +17,7 @@ const c = (
 function mainLoop() {
   
   let proj = mat4.create();
-  mat4.perspective(proj, Math.PI / 2, 1, 1 / 256, 256);
+  mat4.perspective(proj, 45 * Math.PI / 2, canvas.clientWidth / canvas.clientHeight, 1 / 256, 256);
   mat4.translate(proj, proj, [0, 0, -5]);
   
   let view = mat4.create();
@@ -37,7 +37,6 @@ function mainLoop() {
   
   const render = () => {
     Renderer.clear(gl);
-    gl.viewport(0, 0, 600, 600);
     
     shader.connectShader();
     shader.setUniformMatrix4fv(
@@ -64,5 +63,10 @@ function mainLoop() {
   
   render();
 }
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
 
 mainLoop();
