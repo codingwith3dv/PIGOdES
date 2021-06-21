@@ -110,13 +110,14 @@ class Renderer {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    Renderer.resizeToDisplaySize(gl.canvas);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   }
   static draw(gl, va, ib, shader) {
     shader.connectShader();
     va.connectVertexArray();
     ib.connectIndexBuffer();
-    
+
     gl.drawElements(
       gl.TRIANGLES,
       ib.getCount(),
@@ -124,6 +125,25 @@ class Renderer {
       null
     );
   }
+
+  static resizeToDisplaySize = (canvas) => {
+    const dpr = window.devicePixelRatio;
+    const {
+      width,
+      height
+    } = canvas.getBoundingClientRect();
+    const dw = Math.floor(width * dpr);
+    const dh = Math.floor(height * dpr);
+
+    if (
+      canvas.width !== dw ||
+      canvas.height !== dh
+    ) {
+      canvas.width = dw;
+      canvas.height = dh;
+    }
+  };
+
 }
 
 /**
@@ -635,12 +655,13 @@ class Cube {
     vertexSource: `#version 300 es
       layout(location = 0) in vec3 a_position;
       layout(location = 1) in float a_op;
-      uniform mat4 u_proj;
+      uniform mat4 u_model;
       uniform mat4 u_view;
+      uniform mat4 u_proj;
       out vec4 v_color;
       
       void main(void) {
-        gl_Position = u_proj * u_view * vec4(a_position, 1.0);
+        gl_Position = u_proj * u_view * u_model * vec4(a_position, 1.0);
         v_color = vec4(0.2, 0.6, 0.8, a_op);
       }
       `,
@@ -742,28 +763,28 @@ const canvas = document.getElementById('canvas');
 const gl = canvas.getContext('webgl2');
 
 function mainLoop() {
-  
-  let proj = create$1();
-  perspective(proj, 45 * Math.PI / 2, canvas.clientWidth / canvas.clientHeight, 1 / 256, 256);
-  translate(proj, proj, [0, 0, -5]);
-  
   let view = create$1();
-  lookAt(view, fromValues(0, 0, 0), fromValues(0, 0, 0), fromValues(0, 0, 1));
-  
-  let cube = new Cube(gl, 2.0);
-  
+  lookAt(view, fromValues(0, 0, 0), fromValues(0, 0, 0), fromValues(0, 1, 0));
+
+  let cube = new Cube(gl, 1.0);
+
   let shader = new Shader(
     gl,
     Cube.source.vertexSource,
     Cube.source.fragmentSource
   );
-  
+
   shader.disconnectShader();
   let angle = 0.5;
   let inc = 0.001;
+  let model = create$1();
+  translate(model, model, [0, 0, -5]);
+  let proj = create$1();
   
   const render = () => {
     Renderer.clear(gl);
+
+    perspective(proj, Math.PI / 4, gl.canvas.width / gl.canvas.height, 1 / 256, 256);
     
     shader.connectShader();
     shader.setUniformMatrix4fv(
@@ -776,23 +797,23 @@ function mainLoop() {
       'u_view',
       view
     );
-    
+    shader.setUniformMatrix4fv(
+      gl,
+      'u_model',
+      model
+    );
+
     angle += inc;
-    if(angle > 360 || angle < 0) inc = -inc;
+    if (angle > 360 || angle < 0) inc = -inc;
     angle -= inc;
-    rotateY(proj, proj, angle * Math.PI / 180);
-    
+    rotateY(model, model, angle * Math.PI / 180);
+
     cube.render(gl, shader);
-    
+
     window.requestAnimationFrame(render);
   };
-  
+
   render();
 }
-
-window.addEventListener('resize', () => {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-});
 
 mainLoop();
