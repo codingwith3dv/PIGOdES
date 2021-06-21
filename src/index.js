@@ -15,28 +15,28 @@ const c = (
 }
 
 function mainLoop() {
-  
-  let proj = mat4.create();
-  mat4.perspective(proj, 45 * Math.PI / 2, canvas.clientWidth / canvas.clientHeight, 1 / 256, 256);
-  mat4.translate(proj, proj, [0, 0, -5]);
-  
   let view = mat4.create();
-  mat4.lookAt(view, vec3.fromValues(0, 0, 0), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 0, 1));
-  
-  let cube = new Cube(gl, 2.0);
-  
+  mat4.lookAt(view, vec3.fromValues(0, 0, 0), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
+
+  let cube = new Cube(gl, 1.0);
+
   let shader = new Shader(
     gl,
     Cube.source.vertexSource,
     Cube.source.fragmentSource
   );
-  
+
   shader.disconnectShader();
   let angle = 0.5;
   let inc = 0.001;
+  let model = mat4.create();
+  mat4.translate(model, model, [0, 0, -5])
+  let proj = mat4.create();
   
   const render = () => {
     Renderer.clear(gl);
+
+    mat4.perspective(proj, Math.PI / 4, gl.canvas.width / gl.canvas.height, 1 / 256, 256);
     
     shader.connectShader();
     shader.setUniformMatrix4fv(
@@ -49,24 +49,23 @@ function mainLoop() {
       'u_view',
       view
     );
-    
+    shader.setUniformMatrix4fv(
+      gl,
+      'u_model',
+      model
+    );
+
     angle += inc;
-    if(angle > 360 || angle < 0) inc = -inc;
+    if (angle > 360 || angle < 0) inc = -inc;
     angle -= inc;
-    mat4.rotateX(proj, proj, angle * Math.PI / 180);
-    mat4.rotateY(proj, proj, angle * 0.7 * Math.PI / 180);
-    mat4.rotateZ(proj, proj, angle * 0.4 * Math.PI / 180);
+    mat4.rotateY(model, model, angle * Math.PI / 180);
+
     cube.render(gl, shader);
-    
+
     window.requestAnimationFrame(render);
   }
-  
+
   render();
 }
-
-window.addEventListener('resize', () => {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-});
 
 mainLoop();
