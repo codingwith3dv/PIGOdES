@@ -80,7 +80,7 @@ function mainLoop() {
   let proj = mat4.create();
   mat4.perspective(proj, Math.PI / 2, 1, 1 / 256, 256);
   mat4.translate(proj, proj, [0, 0, -5]);
-
+  
   let view = mat4.create();
   mat4.lookAt(view, vec3.fromValues(0, 0, 0), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 0, 1));
   
@@ -127,12 +127,11 @@ function mainLoop() {
   vb.disconnectVertexBuffer();
   ib.disconnectIndexBuffer();
 
-  let renderer = new Renderer();
   let angle = 0.5;
   let inc = 0.01;
   
   const render = () => {
-    renderer.clear(gl);
+    Renderer.clear(gl);
     gl.viewport(0, 0, 600, 600);
     
     shader.connectShader();
@@ -152,7 +151,7 @@ function mainLoop() {
     angle -= inc;
     mat4.rotateY(view, view, degToRad(angle));
     
-    renderer.draw(
+    Renderer.draw(
       gl,
       va,
       ib,
