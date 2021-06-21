@@ -3,6 +3,7 @@ import Renderer from './lib/gl/renderer/renderer.js';
 import * as mat4 from './lib/3d/mat4.js';
 import * as vec3 from './lib/3d/vec3.js';
 import Cube from './lib/elements/cube.js';
+import { data } from './data-loader.js';
 
 const canvas = document.getElementById('canvas');
 const gl = canvas.getContext('webgl2')
@@ -29,15 +30,14 @@ function mainLoop() {
   shader.disconnectShader();
   let angle = 0.5;
   let inc = 0.001;
+  let proj = mat4.create();
   let model = mat4.create();
   mat4.translate(model, model, [0, 0, -5])
-  let proj = mat4.create();
-  
   const render = () => {
     Renderer.clear(gl);
 
-    mat4.perspective(proj, Math.PI / 4, gl.canvas.width / gl.canvas.height, 1 / 256, 256);
-    
+    mat4.perspective(proj, Math.PI / 2, gl.canvas.width / gl.canvas.height, 1, 2000);
+
     shader.connectShader();
     shader.setUniformMatrix4fv(
       gl,
