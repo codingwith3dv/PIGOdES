@@ -1,4 +1,5 @@
 import { map } from './lib/utils/utils.js';
+import Cube from './lib/elements/cube.js'
 import {
   planetData
 } from './data.js';
@@ -9,12 +10,13 @@ planetData.data.forEach((value) => {
     value.Planet,
     {
       'name': value.Planet,
-      'distance': map(value['Distance from Sun'], 6000, -6000),
-      'diameter': value.Diameter
+      'distance': map(value['Distance from Sun'], 60, -60),
+      'radius': map(value.Diameter / 2, 5000, -5000),
+      'axisTilt': value['Obliquity to Orbit'],
+      'sphere': null// Actual reference to the sphere
     }
   );
 });
-console.log(data.get('EARTH'))
 
 export {
   data
