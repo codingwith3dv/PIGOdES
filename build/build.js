@@ -281,6 +281,50 @@ function translate(out, a, v) {
 }
 
 /**
+ * Rotates a matrix by the given angle around the X axis
+ *
+ * @param {mat4} out the receiving matrix
+ * @param {ReadonlyMat4} a the matrix to rotate
+ * @param {Number} rad the angle to rotate the matrix by
+ * @returns {mat4} out
+ */
+function rotateX(out, a, rad) {
+  let s = Math.sin(rad);
+  let c = Math.cos(rad);
+  let a10 = a[4];
+  let a11 = a[5];
+  let a12 = a[6];
+  let a13 = a[7];
+  let a20 = a[8];
+  let a21 = a[9];
+  let a22 = a[10];
+  let a23 = a[11];
+
+  if (a !== out) {
+    // If the source and destination differ, copy the unchanged rows
+    out[0] = a[0];
+    out[1] = a[1];
+    out[2] = a[2];
+    out[3] = a[3];
+    out[12] = a[12];
+    out[13] = a[13];
+    out[14] = a[14];
+    out[15] = a[15];
+  }
+
+  // Perform axis-specific matrix multiplication
+  out[4] = a10 * c + a20 * s;
+  out[5] = a11 * c + a21 * s;
+  out[6] = a12 * c + a22 * s;
+  out[7] = a13 * c + a23 * s;
+  out[8] = a20 * c - a10 * s;
+  out[9] = a21 * c - a11 * s;
+  out[10] = a22 * c - a12 * s;
+  out[11] = a23 * c - a13 * s;
+  return out;
+}
+
+/**
  * Rotates a matrix by the given angle around the Y axis
  *
  * @param {mat4} out the receiving matrix
@@ -650,9 +694,8 @@ function IndexBuffer(
   };
 }
 
-class Cube {
-  static source = {
-    vertexSource: `#version 300 es
+let source = {
+  vertexSource: `#version 300 es
       layout(location = 0) in vec3 a_position;
       layout(location = 1) in float a_op;
       uniform mat4 u_model;
@@ -665,7 +708,7 @@ class Cube {
         v_color = vec4(0.2, 0.6, 0.8, a_op);
       }
       `,
-    fragmentSource: `#version 300 es
+  fragmentSource: `#version 300 es
     precision highp float;
       in vec4 v_color;
       out vec4 color;
@@ -673,7 +716,9 @@ class Cube {
         color = v_color;
       }
       `
-  };
+};
+
+class Cube {
   vao = null;
   ibo = null;
   constructor(gl, l) {
@@ -681,12 +726,12 @@ class Cube {
   }
 
   init(gl, l) {
-    let op1 = 0.1;
-    let op2 = 0.2;
-    let op3 = 0.3;
-    let op4 = 0.4;
-    let op5 = 0.5;
-    let op6 = 0.6;
+    let op1 = 0.4;
+    let op2 = 0.5;
+    let op3 = 0.6;
+    let op4 = 0.7;
+    let op5 = 0.8;
+    let op6 = 0.9;
     let vertex = [
       // front
       -l, -l, -l, op1,
@@ -768,10 +813,10 @@ const planetData = {
     {
       "Planet": "MERCURY",
       "Mass": "0.33 (10^24kg)",
-      "Diameter": "4879 (km)",
+      "Diameter": (4879),
       "Density": "5427 (kg/m3)",
       "Gravity": "3.7 (m/s2)",
-      "Escape Velocity": "4.3 (km/s)",
+      "Escape Velocity": 4.3,
       "Rotation Period": "1407.6 (hours)",
       "Length of Day": "4222.6 (hours)",
       "Distance from Sun": 57.9,
@@ -781,7 +826,7 @@ const planetData = {
       "Orbital Velocity": "47.4 (km/s)",
       "Orbital Inclination": "7.0 (degrees)",
       "Orbital Eccentricity": "0.205",
-      "Obliquity to Orbit": "0.034 (degrees)",
+      "Obliquity to Orbit": 0.034,
       "Mean Temperature": "167 (C)",
       "Surface Pressure": "0 (bars)",
       "Number of Moons": "0",
@@ -792,10 +837,10 @@ const planetData = {
     {
       "Planet": "VENUS",
       "Mass": "4.87 (10^24kg)",
-      "Diameter": "12,104 (km)",
+      "Diameter": (12104),
       "Density": "5243 (kg/m3)",
       "Gravity": "8.9 (m/s2)",
-      "Escape Velocity": "10.4 (km/s)",
+      "Escape Velocity": 10.4,
       "Rotation Period": "-5832.5 (hours)",
       "Length of Day": "2802.0 (hours)",
       "Distance from Sun": 108.2,
@@ -805,7 +850,7 @@ const planetData = {
       "Orbital Velocity": "35.0 (km/s)",
       "Orbital Inclination": "3.4 (degrees)",
       "Orbital Eccentricity": "0.007",
-      "Obliquity to Orbit": "177.4 (degrees)",
+      "Obliquity to Orbit": 177.4,
       "Mean Temperature": "464 (C)",
       "Surface Pressure": "92 (bars)",
       "Number of Moons": "0",
@@ -816,10 +861,10 @@ const planetData = {
     {
       "Planet": "EARTH",
       "Mass": "5.97 (10^24kg)",
-      "Diameter": "12,756 (km)",
+      "Diameter": (12756),
       "Density": "5514 (kg/m3)",
       "Gravity": "9.8 (m/s2)",
-      "Escape Velocity": "11.2 (km/s)",
+      "Escape Velocity": 11.2,
       "Rotation Period": "23.9 (hours)",
       "Length of Day": "24.0 (hours)",
       "Distance from Sun": 149.6,
@@ -829,7 +874,7 @@ const planetData = {
       "Orbital Velocity": "29.8 (km/s)",
       "Orbital Inclination": "0.0 (degrees)",
       "Orbital Eccentricity": "0.017",
-      "Obliquity to Orbit": "23.4 (degrees)",
+      "Obliquity to Orbit": 23.4,
       "Mean Temperature": "15 (C)",
       "Surface Pressure": "1 (bars)",
       "Number of Moons": "1",
@@ -840,10 +885,10 @@ const planetData = {
     {
       "Planet": "MARS",
       "Mass": "0.642 (10^24kg)",
-      "Diameter": "6792 (km)",
+      "Diameter": (6792),
       "Density": "3933 (kg/m3)",
       "Gravity": "3.7 (m/s2)",
-      "Escape Velocity": "5.0 (km/s)",
+      "Escape Velocity": 5.0,
       "Rotation Period": "24.6 (hours)",
       "Length of Day": "24.7 (hours)",
       "Distance from Sun": 227.9,
@@ -853,7 +898,7 @@ const planetData = {
       "Orbital Velocity": "24.1 (km/s)",
       "Orbital Inclination": "1.9 (degrees)",
       "Orbital Eccentricity": "0.094",
-      "Obliquity to Orbit": "25.2 (degrees)",
+      "Obliquity to Orbit": 25.2,
       "Mean Temperature": "-65 (C)",
       "Surface Pressure": "0.01 (bars)",
       "Number of Moons": "2",
@@ -864,10 +909,10 @@ const planetData = {
     {
       "Planet": "JUPITER",
       "Mass": "1898 (10^24kg)",
-      "Diameter": "142,984 (km)",
+      "Diameter": (142984),
       "Density": "1326 (kg/m3)",
       "Gravity": "23.1 (m/s2)",
-      "Escape Velocity": "59.5 (km/s)",
+      "Escape Velocity": 59.5,
       "Rotation Period": "9.9 (hours)",
       "Length of Day": "9.9 (hours)",
       "Distance from Sun": 778.6,
@@ -877,7 +922,7 @@ const planetData = {
       "Orbital Velocity": "13.1 (km/s)",
       "Orbital Inclination": "1.3 (degrees)",
       "Orbital Eccentricity": "0.049",
-      "Obliquity to Orbit": "3.1 (degrees)",
+      "Obliquity to Orbit": 3.1,
       "Mean Temperature": "-110 (C)",
       "Surface Pressure": "Unknown (bars)",
       "Number of Moons": "79",
@@ -888,20 +933,20 @@ const planetData = {
     {
       "Planet": "SATURN",
       "Mass": "568 (10^24kg)",
-      "Diameter": "120,536 (km)",
+      "Diameter": (120536),
       "Density": "687 (kg/m3)",
       "Gravity": "9.0 (m/s2)",
-      "Escape Velocity": "35.5 (km/s)",
+      "Escape Velocity": 35.5,
       "Rotation Period": "10.7 (hours)",
       "Length of Day": "10.7 (hours)",
       "Distance from Sun": 1433.5,
       "Perihelion": "1352.6 (10^6 km)",
       "Aphelion": "1514.5 (10^6 km)",
-      "Orbital Period": "10,747 (days)",
+      "Orbital Period": "10747 (days)",
       "Orbital Velocity": "9.7 (km/s)",
       "Orbital Inclination": "2.5 (degrees)",
       "Orbital Eccentricity": "0.057",
-      "Obliquity to Orbit": "26.7 (degrees)",
+      "Obliquity to Orbit": 26.7,
       "Mean Temperature": "-140 (C)",
       "Surface Pressure": "Unknown (bars)",
       "Number of Moons": "82",
@@ -912,20 +957,20 @@ const planetData = {
     {
       "Planet": "URANUS",
       "Mass": "86.8 (10^24kg)",
-      "Diameter": "51,118 (km)",
+      "Diameter": (51118),
       "Density": "1271 (kg/m3)",
       "Gravity": "8.7 (m/s2)",
-      "Escape Velocity": "21.3 (km/s)",
+      "Escape Velocity": 21.3,
       "Rotation Period": "-17.2 (hours)",
       "Length of Day": "17.2 (hours)",
       "Distance from Sun": 2872.5,
       "Perihelion": "2741.3 (10^6 km)",
       "Aphelion": "3003.6 (10^6 km)",
-      "Orbital Period": "30,589 (days)",
+      "Orbital Period": "30589 (days)",
       "Orbital Velocity": "6.8 (km/s)",
       "Orbital Inclination": "0.8 (degrees)",
       "Orbital Eccentricity": "0.046",
-      "Obliquity to Orbit": "97.8 (degrees)",
+      "Obliquity to Orbit": 97.8,
       "Mean Temperature": "-195 (C)",
       "Surface Pressure": "Unknown (bars)",
       "Number of Moons": "27",
@@ -936,92 +981,80 @@ const planetData = {
     {
       "Planet": "NEPTUNE",
       "Mass": "102 (10^24kg)",
-      "Diameter": "49,528 (km)",
+      "Diameter": (49528),
       "Density": "1638 (kg/m3)",
       "Gravity": "11.0 (m/s2)",
-      "Escape Velocity": "23.5 (km/s)",
+      "Escape Velocity": 23.5,
       "Rotation Period": "16.1 (hours)",
       "Length of Day": "16.1 (hours)",
       "Distance from Sun": 4495.1,
       "Perihelion": "4444.5 (10^6 km)",
       "Aphelion": "4545.7 (10^6 km)",
-      "Orbital Period": "59,800 (days)",
+      "Orbital Period": "59800 (days)",
       "Orbital Velocity": "5.4 (km/s)",
       "Orbital Inclination": "1.8 (degrees)",
       "Orbital Eccentricity": "0.011",
-      "Obliquity to Orbit": "28.3 (degrees)",
+      "Obliquity to Orbit": 28.3,
       "Mean Temperature": "-200 (C)",
       "Surface Pressure": "Unknown (bars)",
       "Number of Moons": "14",
       "Ring System?": "Yes",
       "Global Magnetic Field?": "Yes"
     },
-
-    {
-      "Planet": "PLUTO",
-      "Mass": "0.0146 (10^24kg)",
-      "Diameter": "2370 (km)",
-      "Density": "2095 (kg/m3)",
-      "Gravity": "0.7 (m/s2)",
-      "Escape Velocity": "1.3 (km/s)",
-      "Rotation Period": "-153.3 (hours)",
-      "Length of Day": "153.3 (hours)",
-      "Distance from Sun": 5906.4,
-      "Perihelion": "4436.8 (10^6 km)",
-      "Aphelion": "7375.9 (10^6 km)",
-      "Orbital Period": "90,560 (days)",
-      "Orbital Velocity": "4.7 (km/s)",
-      "Orbital Inclination": "17.2 (degrees)",
-      "Orbital Eccentricity": "0.244",
-      "Obliquity to Orbit": "122.5 (degrees)",
-      "Mean Temperature": "-225 (C)",
-      "Surface Pressure": "1e-05 (bars)",
-      "Number of Moons": "5",
-      "Ring System?": "No",
-      "Global Magnetic Field?": "Unknown"
-    }
   ]
 };
 
-const data = new Map();
-planetData.data.forEach((value) => {
-  data.set(
-    value.Planet,
-    {
-      'name': value.Planet,
-      'distance': map(value['Distance from Sun'], 6000, -6000),
-      'diameter': value.Diameter
-    }
-  );
-});
-console.log(data.get('EARTH'));
+const data = new Array();
+{
+  for(let i = 0; i < planetData.data.length; i++) {
+    let value = planetData.data[i];
+    data.push(
+      {
+        'name': value.Planet,
+        'distance': map(value['Distance from Sun'], 0, 1),
+        'radius': (value.Diameter / 2) / (12756 / 2),
+        'axisTilt': parseFloat(value['Obliquity to Orbit']),
+        'orbPeriod': parseFloat(value['Orbital Period'].slice(0, -7)),
+        'rotPeriod': parseFloat(value['Rotation Period'].slice(0, -8) / 24),
+        'sphere': null // Actual reference to the sphere
+      }
+    );
+  }
+}
 
 const canvas = document.getElementById('canvas');
 const gl = canvas.getContext('webgl2');
+// ?? canvas.getContext('experimental-webgl2');
 
 function mainLoop() {
-  let view = create$1();
-  lookAt(view, fromValues(0, 0, 0), fromValues(0, 0, 0), fromValues(0, 1, 0));
+  data.forEach((value) => {
+    value.sphere = new Cube(gl, value.radius);
+  });
 
-  let cube = new Cube(gl, 1.0);
+  let cos = Math.cos;
+  let sin = Math.sin;
+  let radians = (d) => d * Math.PI / 180;
+  let angleRot = 0;
+  let angleRotSelf = 0;
 
   let shader = new Shader(
     gl,
-    Cube.source.vertexSource,
-    Cube.source.fragmentSource
+    source.vertexSource,
+    source.fragmentSource
   );
 
   shader.disconnectShader();
-  let angle = 0.5;
-  let inc = 0.001;
+  
   let proj = create$1();
-  let model = create$1();
-  translate(model, model, [0, 0, -5]);
-  const render = () => {
+  let view = create$1();
+  
+  const render = (now) => {
     Renderer.clear(gl);
+    now *= 0.01;
 
     perspective(proj, Math.PI / 2, gl.canvas.width / gl.canvas.height, 1, 2000);
-
+    lookAt(view, [0, 0, 0], [0, 0, 0], [0, 0, 1]);
+    
     shader.connectShader();
     shader.setUniformMatrix4fv(
       gl,
@@ -1033,23 +1066,47 @@ function mainLoop() {
       'u_view',
       view
     );
-    shader.setUniformMatrix4fv(
-      gl,
-      'u_model',
-      model
-    );
-
-    angle += inc;
-    if (angle > 360 || angle < 0) inc = -inc;
-    angle -= inc;
-    rotateY(model, model, angle * Math.PI / 180);
-
-    cube.render(gl, shader);
-
+    
+    let modelSphere = create$1();
+    
+    data.forEach((value) => {
+      angleRot = (2 * Math.PI * now / value.orbPeriod);
+      value.axisTilt = 0;
+      // angleRotSelf = (2 * Math.PI * now * value.rotPeriod);
+      translate(
+        modelSphere,
+        modelSphere,
+        fromValues(
+          value.distance * cos(radians(value.axisTilt)) * sin(angleRot),
+          value.distance * sin(radians(value.axisTilt)) * sin(angleRot),
+          value.distance  * cos(angleRot),
+        )
+      );
+      
+      rotateX(
+        modelSphere,
+        modelSphere,
+        radians(value.axisTilt)
+      );
+      rotateY(
+        modelSphere,
+        modelSphere,
+        angleRotSelf
+      );
+      rotateX(modelSphere, modelSphere, radians(90));
+      
+      shader.setUniformMatrix4fv(
+        gl,
+        'u_model',
+        modelSphere
+      );
+      value.sphere.render(gl, shader);
+    });
+    
     window.requestAnimationFrame(render);
   };
 
-  render();
+  window.requestAnimationFrame(render);
 }
 
 mainLoop();

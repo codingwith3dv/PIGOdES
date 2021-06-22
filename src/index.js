@@ -10,17 +10,16 @@ const gl = canvas.getContext('webgl2')
 // ?? canvas.getContext('experimental-webgl2');
 
 function mainLoop() {
-  let view = mat4.create();
-  mat4.lookAt(view, vec3.fromValues(0, 0, 0), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
-
-  data.forEach((value, key) => {
-    data.get(key).sphere = new Cube(gl, value.radius);
+  data.forEach((value) => {
+    value.sphere = new Cube(gl, value.radius);
   });
 
-  let cos = Math.cos
-  let sin = Math.sin
-  let radians = (d) => d * Math.PI / 180
-  let angleRot = 0
+  let cos = Math.cos;
+  let sin = Math.sin;
+  let radians = (d) => d * Math.PI / 180;
+  let angleRot = 0;
+  let angleRotSelf = 0;
+  let then = 0;
 
   let shader = new Shader(
     gl,
@@ -29,16 +28,17 @@ function mainLoop() {
   );
 
   shader.disconnectShader();
-  let angle = 0.5;
-  let inc = 0.001;
+  
   let proj = mat4.create();
-  const render = () => {
+  let view = mat4.create();
+  
+  const render = (now) => {
     Renderer.clear(gl);
-    angleRot = angleRot + 0.1
+    now *= 0.01;
 
     mat4.perspective(proj, Math.PI / 2, gl.canvas.width / gl.canvas.height, 1, 2000);
-    mat4.lookAt(view, vec3.fromValues(0, 0, -20), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
-
+    mat4.lookAt(view, [0, 0, 0], [0, 0, 0], [0, 0, 1]);
+    
     shader.connectShader();
     shader.setUniformMatrix4fv(
       gl,
@@ -53,22 +53,32 @@ function mainLoop() {
     
     let modelSphere = mat4.create();
     
-    data.forEach((value, key) => {
+    data.forEach((value) => {
+      angleRot = (2 * Math.PI * now / value.orbPeriod);
+      value.axisTilt = 0
+      // angleRotSelf = (2 * Math.PI * now * value.rotPeriod);
       mat4.translate(
         modelSphere,
         modelSphere,
         vec3.fromValues(
           value.distance * cos(radians(value.axisTilt)) * sin(angleRot),
           value.distance * sin(radians(value.axisTilt)) * sin(angleRot),
-          value.distance * cos(angleRot)
+          value.distance  * cos(angleRot),
         )
       );
-      mat4.rotate(
+      
+      mat4.rotateX(
         modelSphere,
         modelSphere,
-        radians(value.axisTilt),
-        [1, 0, 0]
+        radians(value.axisTilt)
       );
+      mat4.rotateY(
+        modelSphere,
+        modelSphere,
+        angleRotSelf
+      );
+      mat4.rotateX(modelSphere, modelSphere, radians(90));
+      
       shader.setUniformMatrix4fv(
         gl,
         'u_model',
@@ -80,7 +90,7 @@ function mainLoop() {
     window.requestAnimationFrame(render);
   }
 
-  render();
+  window.requestAnimationFrame(render);
 }
 
 mainLoop();
