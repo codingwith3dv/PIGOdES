@@ -1,7 +1,7 @@
 export let source = {
   vertexSource: `#version 300 es
       layout(location = 0) in vec3 a_position;
-      layout(location = 1) in float a_op;
+      layout(location = 1) in vec4 a_color;
       uniform mat4 u_model;
       uniform mat4 u_view;
       uniform mat4 u_proj;
@@ -9,7 +9,7 @@ export let source = {
       
       void main(void) {
         gl_Position = u_proj * u_view * u_model * vec4(a_position, 1.0);
-        v_color = vec4(0.2, 0.6, 0.8, a_op);
+        v_color = a_color;
       }
       `,
   fragmentSource: `#version 300 es

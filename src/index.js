@@ -2,7 +2,7 @@ import Shader from './lib/gl/shader/shader.js';
 import Renderer from './lib/gl/renderer/renderer.js';
 import * as mat4 from './lib/3d/mat4.js';
 import * as vec3 from './lib/3d/vec3.js';
-import Cube, { source } from './lib/elements/cube.js';
+import Sphere, { source } from './lib/elements/sphere.js';
 import { data } from './data-loader.js';
 
 const canvas = document.getElementById('canvas');
@@ -11,7 +11,8 @@ const gl = canvas.getContext('webgl2')
 
 function mainLoop() {
   data.forEach((value) => {
-    value.sphere = new Cube(gl, value.radius);
+    // if(value.name !== 'VENUS') return;
+    value.sphere = new Sphere(gl, value.radius, value.name);
   });
 
   let cos = Math.cos;
@@ -34,7 +35,7 @@ function mainLoop() {
   
   const render = (now) => {
     Renderer.clear(gl);
-    now *= 0.01;
+    now *= 0.1;
 
     mat4.perspective(proj, Math.PI / 2, gl.canvas.width / gl.canvas.height, 1, 2000);
     mat4.lookAt(view, [0, 0, 0], [0, 0, 0], [0, 0, 1]);
@@ -54,16 +55,17 @@ function mainLoop() {
     let modelSphere = mat4.create();
     
     data.forEach((value) => {
+      if(!value.sphere) return;
+      mat4.identity(modelSphere);
       angleRot = (2 * Math.PI * now / value.orbPeriod);
-      value.axisTilt = 0
-      // angleRotSelf = (2 * Math.PI * now * value.rotPeriod);
+      angleRotSelf = (2 * Math.PI * now * value.rotPeriod);
       mat4.translate(
         modelSphere,
         modelSphere,
         vec3.fromValues(
           value.distance * cos(radians(value.axisTilt)) * sin(angleRot),
           value.distance * sin(radians(value.axisTilt)) * sin(angleRot),
-          value.distance  * cos(angleRot),
+          value.distance * cos(angleRot),
         )
       );
       
