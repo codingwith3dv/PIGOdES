@@ -1030,7 +1030,6 @@ const gl = canvas.getContext('webgl2');
 
 function mainLoop() {
   data.forEach((value) => {
-    // if(value.name !== 'VENUS') return;
     value.sphere = new Sphere(gl, value.radius, value.name);
   });
 
