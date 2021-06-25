@@ -19,6 +19,10 @@ class Sphere {
     this.init(gl);
   }
   init(gl) {
+    let cos = Math.cos;
+    let sin = Math.sin;
+    let PI = Math.PI;
+    
     let vertices = [];
     let xy;
     let z;
@@ -26,20 +30,20 @@ class Sphere {
     let y;
     let stackAngle;
     let sectorAngle;
-    let sectorStep = 2 * Math.PI / this.sectorCount;
-    let stackStep = Math.PI / this.stackCount;
+    let sectorStep = 2 * PI / this.sectorCount;
+    let stackStep = PI / this.stackCount;
     
     // vertices
     for (let i = 0; i <= this.stackCount; ++i) {
-      stackAngle = Math.PI / 2 - i * stackStep;
-      xy = this.radius * Math.cos(stackAngle);
-      z = this.radius * Math.sin(stackAngle);
+      stackAngle = PI / 2 - i * stackStep;
+      xy = this.radius * cos(stackAngle);
+      z = this.radius * sin(stackAngle);
     
       for (let j = 0; j <= this.sectorCount; ++j) {
         sectorAngle = j * sectorStep;
     
-        x = xy * Math.cos(sectorAngle);
-        y = xy * Math.sin(sectorAngle);
+        x = xy * cos(sectorAngle);
+        y = xy * sin(sectorAngle);
         vertices.push(x);
         vertices.push(y);
         vertices.push(z);
