@@ -694,6 +694,11 @@ function IndexBuffer(
   };
 }
 
+let cos = Math.cos;
+let sin = Math.sin;
+let PI = Math.PI;
+let radians = (d) => d * PI / 180;
+
 let source = {
   vertexSource: `#version 300 es
       layout(location = 0) in vec3 a_position;
@@ -731,10 +736,6 @@ class Sphere {
     this.init(gl);
   }
   init(gl) {
-    let cos = Math.cos;
-    let sin = Math.sin;
-    let PI = Math.PI;
-    
     let vertices = [];
     let xy;
     let z;
@@ -1037,10 +1038,6 @@ function mainLoop() {
     value.sphere = new Sphere(gl, value.radius, value.name);
   });
 
-  let cos = Math.cos;
-  let sin = Math.sin;
-  let PI = Math.PI;
-  let radians = (d) => d * PI / 180;
   let angleRot = 0;
   let angleRotSelf = 0;
 
@@ -1059,8 +1056,18 @@ function mainLoop() {
     Renderer.clear(gl);
     now *= 0.1;
 
-    perspective(proj, PI / 2, gl.canvas.width / gl.canvas.height, 1, 2000);
-    lookAt(view, [0, 0, 0], [0, 0, 0], [0, 0, 1]);
+    perspective(
+      proj,
+      PI / 2,
+      gl.canvas.width / gl.canvas.height,
+      1, 2000
+    );
+    lookAt(
+      view,
+      [0, 0, 0],
+      [0, 0, 0],
+      [0, 0, 1]
+    );
     
     shader.connectShader();
     shader.setUniformMatrix4fv(
@@ -1085,8 +1092,12 @@ function mainLoop() {
         modelSphere,
         modelSphere,
         fromValues(
-          value.distance * cos(radians(value.axisTilt)) * sin(angleRot),
-          value.distance * sin(radians(value.axisTilt)) * sin(angleRot),
+          value.distance *
+            cos(radians(value.axisTilt)) *
+            sin(angleRot),
+          value.distance *
+            sin(radians(value.axisTilt)) *
+            sin(angleRot),
           value.distance * cos(angleRot),
         )
       );
