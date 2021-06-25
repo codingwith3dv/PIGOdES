@@ -1,4 +1,3 @@
-import { map } from './lib/utils/utils.js';
 import {
   planetData
 } from './data.js';
