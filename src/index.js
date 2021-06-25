@@ -16,7 +16,8 @@ function mainLoop() {
 
   let cos = Math.cos;
   let sin = Math.sin;
-  let radians = (d) => d * Math.PI / 180;
+  let PI = Math.PI;
+  let radians = (d) => d * PI / 180;
   let angleRot = 0;
   let angleRotSelf = 0;
   let then = 0;
@@ -36,7 +37,7 @@ function mainLoop() {
     Renderer.clear(gl);
     now *= 0.1;
 
-    mat4.perspective(proj, Math.PI / 2, gl.canvas.width / gl.canvas.height, 1, 2000);
+    mat4.perspective(proj, PI / 2, gl.canvas.width / gl.canvas.height, 1, 2000);
     mat4.lookAt(view, [0, 0, 0], [0, 0, 0], [0, 0, 1]);
     
     shader.connectShader();
@@ -56,8 +57,8 @@ function mainLoop() {
     data.forEach((value) => {
       if(!value.sphere) return;
       mat4.identity(modelSphere);
-      angleRot = (2 * Math.PI * now / value.orbPeriod);
-      angleRotSelf = (2 * Math.PI * now * value.rotPeriod);
+      angleRot = (2 * PI * now / value.orbPeriod);
+      angleRotSelf = (2 * PI * now * value.rotPeriod);
       mat4.translate(
         modelSphere,
         modelSphere,
