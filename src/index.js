@@ -1,101 +1,85 @@
-import {
-  CreateShader
-} from '../lib/glUtils.js'
-import IndexBuffer from './buffers/indexBuffer.js'
-import VertexBuffer from './buffers/vertexBuffer.js'
+import Shader from './lib/gl/shader/shader.js';
+import Renderer from './lib/gl/renderer/renderer.js';
+import * as mat4 from './lib/3d/mat4.js';
+import * as vec3 from './lib/3d/vec3.js';
+import Cube, { source } from './lib/elements/cube.js';
+import { data } from './data-loader.js';
 
 const canvas = document.getElementById('canvas');
-const gl = canvas.getContext('webgl') ??
-  canvas.getContext('experimental-webgl');
-
-const c = (
-  val = 0
-) => {
-  return val / 255;
-}
+const gl = canvas.getContext('webgl2')
+// ?? canvas.getContext('experimental-webgl2');
 
 function mainLoop() {
-  let positions = [
-    -0.5, -0.5,
-     0.5, -0.5,
-     0.5,  0.5,
-    -0.5,  0.5
-  ]
-  let indices = [
-    0, 1, 2,
-    2, 3, 0
-  ];
+  let view = mat4.create();
+  mat4.lookAt(view, vec3.fromValues(0, 0, 0), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
 
-  let vb = new VertexBuffer(
-    gl,
-    new Float32Array(positions)
-  );
-    
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(
-    0,
-    2,
-    gl.FLOAT,
-    false,
-    8,
-    0
-  );
-  
-  let ib = new IndexBuffer(
-    gl,
-    new Uint16Array(indices),
-    6
-  );
-  
-  let vSource =
-    `
-    attribute vec2 a_pos;
-    void main() {
-      gl_Position = vec4(a_pos, 0.0, 1.0);
-    }
-    `;
+  data.forEach((value, key) => {
+    data.get(key).sphere = new Cube(gl, value.radius);
+  });
 
-  let fSource =
-    `
-    precision highp float;
-    uniform vec4 u_Color;
-    void main() {
-      gl_FragColor = u_Color;
-    }
-    `;
-    
-  let shader = CreateShader(
+  let cos = Math.cos
+  let sin = Math.sin
+  let radians = (d) => d * Math.PI / 180
+  let angleRot = 0
+
+  let shader = new Shader(
     gl,
-    vSource,
-    fSource
+    source.vertexSource,
+    source.fragmentSource
   );
-  
-  let u_location = gl.getUniformLocation(
-    shader,
-    'u_Color'
-  );
-  
-  gl.uniform4f(
-    u_location,
-    1.0,
-    0.0,
-    0.0,
-    1.0
-  ); 
-  
+
+  shader.disconnectShader();
+  let angle = 0.5;
+  let inc = 0.001;
+  let proj = mat4.create();
   const render = () => {
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawElements(
-      gl.TRIANGLES,
-      6,
-      gl.UNSIGNED_SHORT,
-      null
+    Renderer.clear(gl);
+    angleRot = angleRot + 0.1
+
+    mat4.perspective(proj, Math.PI / 2, gl.canvas.width / gl.canvas.height, 1, 2000);
+    mat4.lookAt(view, vec3.fromValues(0, 0, -20), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
+
+    shader.connectShader();
+    shader.setUniformMatrix4fv(
+      gl,
+      'u_proj',
+      proj
+    );
+    shader.setUniformMatrix4fv(
+      gl,
+      'u_view',
+      view
     );
     
+    let modelSphere = mat4.create();
+    
+    data.forEach((value, key) => {
+      mat4.translate(
+        modelSphere,
+        modelSphere,
+        vec3.fromValues(
+          value.distance * cos(radians(value.axisTilt)) * sin(angleRot),
+          value.distance * sin(radians(value.axisTilt)) * sin(angleRot),
+          value.distance * cos(angleRot)
+        )
+      );
+      mat4.rotate(
+        modelSphere,
+        modelSphere,
+        radians(value.axisTilt),
+        [1, 0, 0]
+      );
+      shader.setUniformMatrix4fv(
+        gl,
+        'u_model',
+        modelSphere
+      );
+      value.sphere.render(gl, shader);
+    });
+    
     window.requestAnimationFrame(render);
-  };
-  
+  }
+
   render();
 }
 
