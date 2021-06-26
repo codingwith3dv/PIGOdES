@@ -3,7 +3,7 @@ export const solarData = {
     {
       "name": "SUN",
       "Diameter": 109 * 12756,
-      "Rotation Period": "600 (hours)",
+      "Rotation Period": "1.125 (hours)",
       "Orbital Period": "0 (days)",
       "Distance from Sun": 0,
       "Obliquity to Orbit": 7.25

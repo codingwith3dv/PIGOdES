@@ -103,6 +103,17 @@ function Shader(
       matrix
     );
   };
+  
+  this.setUniform1i = (
+    gl,
+    name,
+    img
+  ) => {
+    gl.uniform1i(
+      getLocation(id, name),
+      img
+    );
+  };
 }
 
 class Renderer {
@@ -699,26 +710,76 @@ let sin = Math.sin;
 let PI = Math.PI;
 let radians = (d) => d * PI / 180;
 
+function Texture(
+  gl,
+  path
+) {
+  let id = 0;
+  let filePath = path;
+  
+  id = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, id);
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    1,
+    1,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    new Uint8Array([0, 0, 255, 255])
+  );
+  
+  let img = new Image();
+  img.src = filePath;
+  img.addEventListener('load', () => {
+    gl.bindTexture(gl.TEXTURE_2D, id);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA8,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      img
+    );
+    gl.generateMipmap(gl.TEXTURE_2D);
+  });
+  
+  this.connectTexture = (gl, slot = 0) => {
+    gl.activeTexture(gl.TEXTURE0 + slot);
+    gl.bindTexture(gl.TEXTURE_2D, id);
+  };
+  
+  this.disconnectTexture = (gl) => {
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  };
+}
+
 let source = {
   vertexSource: `#version 300 es
       layout(location = 0) in vec3 a_position;
-      layout(location = 1) in vec4 a_color;
+      layout(location = 1) in vec2 a_texCoords;
+      
       uniform mat4 u_model;
       uniform mat4 u_view;
       uniform mat4 u_proj;
-      out vec4 v_color;
+      
+      out vec2 v_texCoords;
       
       void main(void) {
         gl_Position = u_proj * u_view * u_model * vec4(a_position, 1.0);
-        v_color = a_color;
+        v_texCoords = a_texCoords;
       }
       `,
   fragmentSource: `#version 300 es
     precision highp float;
-      in vec4 v_color;
+      in vec2 v_texCoords;
+      uniform sampler2D u_image;
+      
       out vec4 color;
       void main(void) {
-        color = v_color;
+        color = texture(u_image, v_texCoords);
       }
       `
 };
@@ -730,9 +791,11 @@ class Sphere {
   name = '';
   stackCount = 100;
   sectorCount = 100;
-  constructor(gl, _radius, _name) {
-    this.radius = _radius ;
+  texture = null;
+  constructor(gl, _radius, _name, path) {
+    this.radius = _radius;
     this.name   = _name;
+    this.texture = new Texture(gl, path);
     this.init(gl);
   }
   init(gl) {
@@ -760,10 +823,9 @@ class Sphere {
         vertices.push(x);
         vertices.push(y);
         vertices.push(z);
-        vertices.push(0.2);
-        vertices.push(0.6);
-        vertices.push(0.8);
-        vertices.push(this.name === 'EARTH'?1.0:0.2);
+        
+        vertices.push(j / this.sectorCount);
+        vertices.push(i / this.stackCount);
       }
     }
     
@@ -797,7 +859,7 @@ class Sphere {
     );
     let vbl = new VertexBufferLayout(gl);
     vbl.pushBack(3, gl.FLOAT, false);
-    vbl.pushBack(4, gl.FLOAT, false);
+    vbl.pushBack(2, gl.FLOAT, false);
     this.vao.addBuffer(gl, vb, vbl);
     
     this.ibo = new IndexBuffer(
@@ -811,14 +873,23 @@ class Sphere {
     this.ibo.disconnectIndexBuffer();
   }
   render(gl, shader) {
+    this.texture.connectTexture(gl, 0);
     Renderer.draw(gl, this.vao, this.ibo, shader);
   }
 }
 
-const planetData = {
+const solarData = {
   "data": [
     {
-      "Planet": "MERCURY",
+      "name": "SUN",
+      "Diameter": 109 * 12756,
+      "Rotation Period": "1.125 (hours)",
+      "Orbital Period": "0 (days)",
+      "Distance from Sun": 0,
+      "Obliquity to Orbit": 7.25
+    },
+    {
+      "name": "MERCURY",
       "Mass": "0.33 (10^24kg)",
       "Diameter": (4879),
       "Density": "5427 (kg/m3)",
@@ -842,7 +913,7 @@ const planetData = {
     },
 
     {
-      "Planet": "VENUS",
+      "name": "VENUS",
       "Mass": "4.87 (10^24kg)",
       "Diameter": (12104),
       "Density": "5243 (kg/m3)",
@@ -866,7 +937,7 @@ const planetData = {
     },
 
     {
-      "Planet": "EARTH",
+      "name": "EARTH",
       "Mass": "5.97 (10^24kg)",
       "Diameter": (12756),
       "Density": "5514 (kg/m3)",
@@ -890,7 +961,7 @@ const planetData = {
     },
 
     {
-      "Planet": "MARS",
+      "name": "MARS",
       "Mass": "0.642 (10^24kg)",
       "Diameter": (6792),
       "Density": "3933 (kg/m3)",
@@ -914,7 +985,7 @@ const planetData = {
     },
 
     {
-      "Planet": "JUPITER",
+      "name": "JUPITER",
       "Mass": "1898 (10^24kg)",
       "Diameter": (142984),
       "Density": "1326 (kg/m3)",
@@ -938,7 +1009,7 @@ const planetData = {
     },
 
     {
-      "Planet": "SATURN",
+      "name": "SATURN",
       "Mass": "568 (10^24kg)",
       "Diameter": (120536),
       "Density": "687 (kg/m3)",
@@ -962,7 +1033,7 @@ const planetData = {
     },
 
     {
-      "Planet": "URANUS",
+      "name": "URANUS",
       "Mass": "86.8 (10^24kg)",
       "Diameter": (51118),
       "Density": "1271 (kg/m3)",
@@ -986,7 +1057,7 @@ const planetData = {
     },
 
     {
-      "Planet": "NEPTUNE",
+      "name": "NEPTUNE",
       "Mass": "102 (10^24kg)",
       "Diameter": (49528),
       "Density": "1638 (kg/m3)",
@@ -1012,17 +1083,36 @@ const planetData = {
 };
 
 const data = new Array();
+
+const texPaths = [
+  '../res/2k_sun.jpg',
+  '../res/2k_mercury.jpg',
+  '../res/2k_venus_surface.jpg',
+  '../res/2k_earth_daymap.jpg',
+  '../res/2k_mars.jpg',
+  '../res/2k_jupiter.jpg',
+  '../res/2k_saturn.jpg',
+  '../res/2k_uranus.jpg',
+  '../res/2k_neptune.jpg'
+];
+
 {
-  for(let i = 0; i < planetData.data.length; i++) {
-    let value = planetData.data[i];
+  for(let i = 0; i < solarData.data.length; i++) {
+    let value = solarData.data[i];
+    let isSun = false;
+    if(value.name === 'SUN') {
+      isSun = true;
+    }
     data.push(
       {
-        'name': value.Planet,
+        'name': value.name,
         'distance': parseFloat(value['Distance from Sun']),
         'radius': (parseFloat(value.Diameter) / 2) / (12756 / 2),
         'axisTilt': parseFloat(value['Obliquity to Orbit']),
         'orbPeriod': parseFloat(value['Orbital Period'].slice(0, -7)),
         'rotPeriod':(parseFloat(value['Rotation Period'].slice(0, -8)) / 24),
+        'isSun': isSun,
+        'texturePath': texPaths[i],
         'sphere': null // Actual reference to the sphere
       }
     );
@@ -1035,7 +1125,17 @@ const gl = canvas.getContext('webgl2');
 
 function mainLoop() {
   data.forEach((value) => {
-    value.sphere = new Sphere(gl, value.radius, value.name);
+    if(!value.isSun) {
+      value.distance += 109;
+    } else {
+      value.radius = 109;
+    }
+    value.sphere = new Sphere(
+      gl,
+      value.radius,
+      value.name,
+      value.texturePath
+    );
   });
 
   let angleRot = 0;
@@ -1054,7 +1154,7 @@ function mainLoop() {
   
   const render = (now) => {
     Renderer.clear(gl);
-    now *= 0.1;
+    now *= 0.001;
 
     perspective(
       proj,
@@ -1064,9 +1164,9 @@ function mainLoop() {
     );
     lookAt(
       view,
+      [-500, 0, 0],
       [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 1]
+      [0, 1, 0]
     );
     
     shader.connectShader();
@@ -1086,8 +1186,14 @@ function mainLoop() {
     data.forEach((value) => {
       if(!value.sphere) return;
       identity(modelSphere);
-      angleRot = (2 * PI * now / value.orbPeriod);
-      angleRotSelf = (2 * PI * now * value.rotPeriod);
+      
+      if(!value.isSun) {
+        angleRot = (2 * PI * now / value.orbPeriod);
+        angleRotSelf = (2 * PI * now * value.rotPeriod);
+      } else {
+        angleRot = 0;
+        angleRotSelf = (2 * PI * now * value.rotPeriod);
+      }
       translate(
         modelSphere,
         modelSphere,
@@ -1118,6 +1224,11 @@ function mainLoop() {
         gl,
         'u_model',
         modelSphere
+      );
+      shader.setUniform1i(
+        gl,
+        'u_image',
+        0
       );
       value.sphere.render(gl, shader);
     });

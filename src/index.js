@@ -17,7 +17,12 @@ function mainLoop() {
     } else {
       value.radius = 109;
     }
-    value.sphere = new Sphere(gl, value.radius, value.name);
+    value.sphere = new Sphere(
+      gl,
+      value.radius,
+      value.name,
+      value.texturePath
+    );
   });
 
   let angleRot = 0;
@@ -37,7 +42,7 @@ function mainLoop() {
   
   const render = (now) => {
     Renderer.clear(gl);
-    now *= 0.1;
+    now *= 0.001;
 
     mat4.perspective(
       proj,
@@ -72,10 +77,11 @@ function mainLoop() {
       
       if(!value.isSun) {
         angleRot = (2 * util.PI * now / value.orbPeriod);
+        angleRotSelf = (2 * util.PI * now * value.rotPeriod);
       } else {
         angleRot = 0;
+        angleRotSelf = (2 * util.PI * now * value.rotPeriod);
       }
-      angleRotSelf = (2 * util.PI * now * value.rotPeriod);
       mat4.translate(
         modelSphere,
         modelSphere,
@@ -106,6 +112,11 @@ function mainLoop() {
         gl,
         'u_model',
         modelSphere
+      );
+      shader.setUniform1i(
+        gl,
+        'u_image',
+        0
       );
       value.sphere.render(gl, shader);
     });
