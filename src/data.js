@@ -1,7 +1,15 @@
-export const planetData = {
+export const solarData = {
   "data": [
     {
-      "Planet": "MERCURY",
+      "name": "SUN",
+      "Diameter": 109 * 12756,
+      "Rotation Period": "600 (hours)",
+      "Orbital Period": "0 (days)",
+      "Distance from Sun": 0,
+      "Obliquity to Orbit": 7.25
+    },
+    {
+      "name": "MERCURY",
       "Mass": "0.33 (10^24kg)",
       "Diameter": (4879),
       "Density": "5427 (kg/m3)",
@@ -25,7 +33,7 @@ export const planetData = {
     },
 
     {
-      "Planet": "VENUS",
+      "name": "VENUS",
       "Mass": "4.87 (10^24kg)",
       "Diameter": (12104),
       "Density": "5243 (kg/m3)",
@@ -49,7 +57,7 @@ export const planetData = {
     },
 
     {
-      "Planet": "EARTH",
+      "name": "EARTH",
       "Mass": "5.97 (10^24kg)",
       "Diameter": (12756),
       "Density": "5514 (kg/m3)",
@@ -73,7 +81,7 @@ export const planetData = {
     },
 
     {
-      "Planet": "MARS",
+      "name": "MARS",
       "Mass": "0.642 (10^24kg)",
       "Diameter": (6792),
       "Density": "3933 (kg/m3)",
@@ -97,7 +105,7 @@ export const planetData = {
     },
 
     {
-      "Planet": "JUPITER",
+      "name": "JUPITER",
       "Mass": "1898 (10^24kg)",
       "Diameter": (142984),
       "Density": "1326 (kg/m3)",
@@ -121,7 +129,7 @@ export const planetData = {
     },
 
     {
-      "Planet": "SATURN",
+      "name": "SATURN",
       "Mass": "568 (10^24kg)",
       "Diameter": (120536),
       "Density": "687 (kg/m3)",
@@ -145,7 +153,7 @@ export const planetData = {
     },
 
     {
-      "Planet": "URANUS",
+      "name": "URANUS",
       "Mass": "86.8 (10^24kg)",
       "Diameter": (51118),
       "Density": "1271 (kg/m3)",
@@ -169,7 +177,7 @@ export const planetData = {
     },
 
     {
-      "Planet": "NEPTUNE",
+      "name": "NEPTUNE",
       "Mass": "102 (10^24kg)",
       "Diameter": (49528),
       "Density": "1638 (kg/m3)",

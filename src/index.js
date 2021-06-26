@@ -12,6 +12,11 @@ const gl = canvas.getContext('webgl2')
 
 function mainLoop() {
   data.forEach((value) => {
+    if(!value.isSun) {
+      value.distance += 109;
+    } else {
+      value.radius = 109;
+    }
     value.sphere = new Sphere(gl, value.radius, value.name);
   });
 
@@ -42,9 +47,9 @@ function mainLoop() {
     );
     mat4.lookAt(
       view,
+      [-500, 0, 0],
       [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 1]
+      [0, 1, 0]
     );
     
     shader.connectShader();
@@ -64,7 +69,12 @@ function mainLoop() {
     data.forEach((value) => {
       if(!value.sphere) return;
       mat4.identity(modelSphere);
-      angleRot = (2 * util.PI * now / value.orbPeriod);
+      
+      if(!value.isSun) {
+        angleRot = (2 * util.PI * now / value.orbPeriod);
+      } else {
+        angleRot = 0;
+      }
       angleRotSelf = (2 * util.PI * now * value.rotPeriod);
       mat4.translate(
         modelSphere,
