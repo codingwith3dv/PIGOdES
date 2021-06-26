@@ -8,7 +8,8 @@ import * as util from './lib/utils/utils.js';
 
 const canvas = document.getElementById('canvas');
 const gl = canvas.getContext('webgl2')
-// ?? canvas.getContext('experimental-webgl2');
+ ?? canvas.getContext('experimental-webgl2');
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
 function mainLoop() {
   data.forEach((value) => {
