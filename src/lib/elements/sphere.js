@@ -6,6 +6,7 @@ import VertexBuffer from '../gl/buffers/VertexBuffer.js';
 import IndexBuffer from '../gl/buffers/indexBuffer.js';
 import Renderer from '../gl/renderer/renderer.js';
 import * as util from '../utils/utils.js';
+import Texture from '../gl/texture/texture.js';
 
 class Sphere {
   vao = null;
@@ -14,9 +15,11 @@ class Sphere {
   name = '';
   stackCount = 100;
   sectorCount = 100;
-  constructor(gl, _radius, _name) {
-    this.radius = _radius ;
+  texture = null;
+  constructor(gl, _radius, _name, path) {
+    this.radius = _radius;
     this.name   = _name;
+    this.texture = new Texture(gl, path);
     this.init(gl);
   }
   init(gl) {
@@ -44,10 +47,9 @@ class Sphere {
         vertices.push(x);
         vertices.push(y);
         vertices.push(z);
-        vertices.push(0.2);
-        vertices.push(0.6);
-        vertices.push(0.8);
-        vertices.push(this.name === 'EARTH'?1.0:0.2);
+        
+        vertices.push(j / this.sectorCount);
+        vertices.push(i / this.stackCount);
       }
     }
     
@@ -81,7 +83,7 @@ class Sphere {
     );
     let vbl = new VertexBufferLayout(gl);
     vbl.pushBack(3, gl.FLOAT, false);
-    vbl.pushBack(4, gl.FLOAT, false);
+    vbl.pushBack(2, gl.FLOAT, false);
     this.vao.addBuffer(gl, vb, vbl);
     
     this.ibo = new IndexBuffer(
@@ -95,6 +97,7 @@ class Sphere {
     this.ibo.disconnectIndexBuffer();
   }
   render(gl, shader) {
+    this.texture.connectTexture(gl, 0);
     Renderer.draw(gl, this.vao, this.ibo, shader);
   }
 }

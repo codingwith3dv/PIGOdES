@@ -8,11 +8,22 @@ import * as util from './lib/utils/utils.js';
 
 const canvas = document.getElementById('canvas');
 const gl = canvas.getContext('webgl2')
-// ?? canvas.getContext('experimental-webgl2');
+ ?? canvas.getContext('experimental-webgl2');
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
 function mainLoop() {
   data.forEach((value) => {
-    value.sphere = new Sphere(gl, value.radius, value.name);
+    if(!value.isSun) {
+      value.distance += 109;
+    } else {
+      value.radius = 109;
+    }
+    value.sphere = new Sphere(
+      gl,
+      value.radius,
+      value.name,
+      value.texturePath
+    );
   });
 
   let angleRot = 0;
@@ -32,7 +43,7 @@ function mainLoop() {
   
   const render = (now) => {
     Renderer.clear(gl);
-    now *= 0.1;
+    now *= 0.001;
 
     mat4.perspective(
       proj,
@@ -42,9 +53,9 @@ function mainLoop() {
     );
     mat4.lookAt(
       view,
+      [-500, 0, 0],
       [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 1]
+      [0, 1, 0]
     );
     
     shader.connectShader();
@@ -64,8 +75,14 @@ function mainLoop() {
     data.forEach((value) => {
       if(!value.sphere) return;
       mat4.identity(modelSphere);
-      angleRot = (2 * util.PI * now / value.orbPeriod);
-      angleRotSelf = (2 * util.PI * now * value.rotPeriod);
+      
+      if(!value.isSun) {
+        angleRot = (2 * util.PI * now / value.orbPeriod);
+        angleRotSelf = (2 * util.PI * now * value.rotPeriod);
+      } else {
+        angleRot = 0;
+        angleRotSelf = (2 * util.PI * now * value.rotPeriod);
+      }
       mat4.translate(
         modelSphere,
         modelSphere,
@@ -96,6 +113,11 @@ function mainLoop() {
         gl,
         'u_model',
         modelSphere
+      );
+      shader.setUniform1i(
+        gl,
+        'u_image',
+        0
       );
       value.sphere.render(gl, shader);
     });
