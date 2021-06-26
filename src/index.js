@@ -47,7 +47,7 @@ function mainLoop() {
 
     mat4.perspective(
       proj,
-      util.PI / 2,
+      util.PI / 4,
       gl.canvas.width / gl.canvas.height,
       1, 2000
     );

@@ -1085,15 +1085,15 @@ const solarData = {
 const data = new Array();
 
 const texPaths = [
-  '../res/2k_sun.jpg',
-  '../res/2k_mercury.jpg',
-  '../res/2k_venus_surface.jpg',
-  '../res/2k_earth_daymap.jpg',
-  '../res/2k_mars.jpg',
-  '../res/2k_jupiter.jpg',
-  '../res/2k_saturn.jpg',
-  '../res/2k_uranus.jpg',
-  '../res/2k_neptune.jpg'
+  './res/2k_sun.jpg',
+  './res/2k_mercury.jpg',
+  './res/2k_venus_surface.jpg',
+  './res/2k_earth_daymap.jpg',
+  './res/2k_mars.jpg',
+  './res/2k_jupiter.jpg',
+  './res/2k_saturn.jpg',
+  './res/2k_uranus.jpg',
+  './res/2k_neptune.jpg'
 ];
 
 {
@@ -1120,8 +1120,9 @@ const texPaths = [
 }
 
 const canvas = document.getElementById('canvas');
-const gl = canvas.getContext('webgl2');
-// ?? canvas.getContext('experimental-webgl2');
+const gl = canvas.getContext('webgl2')
+ ?? canvas.getContext('experimental-webgl2');
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
 function mainLoop() {
   data.forEach((value) => {
@@ -1158,7 +1159,7 @@ function mainLoop() {
 
     perspective(
       proj,
-      PI / 2,
+      PI / 4,
       gl.canvas.width / gl.canvas.height,
       1, 2000
     );
