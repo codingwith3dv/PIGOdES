@@ -98,11 +98,11 @@ class Sphere {
   }
   render(gl, shader) {
     this.texture.connectTexture(gl, 0);
-    Renderer.draw(gl, this.vao, this.ibo, shader);
+    Renderer.draw(gl, this.vao, this.ibo, shader, gl.TRIANGLES);
   }
 }
 
-export default Sphere
+export default Sphere;
 export {
   source as SphereSource
-} from './sphere.shader.js'
+} from './sphere.shader.js';

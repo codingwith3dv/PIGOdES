@@ -3,6 +3,7 @@ import Renderer from './lib/gl/renderer/renderer.js';
 import * as mat4 from './lib/3d/mat4.js';
 import * as vec3 from './lib/3d/vec3.js';
 import Sphere, { SphereSource } from './lib/elements/sphere/sphere.js';
+import Orbit, { OrbitSource } from './lib/elements/orbit/orbit.js';
 import { data } from './data-loader.js';
 import * as util from './lib/utils/utils.js';
 
@@ -15,6 +16,7 @@ function mainLoop() {
   data.forEach((value) => {
     if(!value.isSun) {
       value.distance += 109;
+      value.radius *= 10
     } else {
       value.radius = 109;
     }
@@ -24,62 +26,75 @@ function mainLoop() {
       value.name,
       value.texturePath
     );
+    value.orbit = new Orbit(
+      gl,
+      value.distance,
+      value.name
+    );
   });
 
   let angleRot = 0;
   let angleRotSelf = 0;
   let then = 0;
 
-  let shader = new Shader(
+  let sphereShader = new Shader(
     gl,
     SphereSource.vertexSource,
     SphereSource.fragmentSource
   );
+  let orbitShader = new Shader(
+    gl,
+    OrbitSource.vertexSource,
+    OrbitSource.fragmentSource
+  );
 
-  shader.disconnectShader();
+  sphereShader.disconnectShader();
+  orbitShader.disconnectShader();
   
   let proj = mat4.create();
   let view = mat4.create();
   
   const render = (now) => {
     Renderer.clear(gl);
-    now *= 0.01;
+    now *= 0.001;
 
     mat4.perspective(
       proj,
       util.PI / 4,
       gl.canvas.width / gl.canvas.height,
-      1, 2000
+      1, 80000
     );
     mat4.lookAt(
       view,
-      [-1200, 0, 0],
+      [-1000, 0, 0],
       [0, 0, 0],
       [0, 1, 0]
     );
     mat4.rotateZ(
       view,
       view,
-      util.radians(90)
+      util.radians(0)
     );
     
-    shader.connectShader();
-    shader.setUniformMatrix4fv(
+    sphereShader.connectShader();
+    sphereShader.setUniformMatrix4fv(
       gl,
       'u_proj',
       proj
     );
-    shader.setUniformMatrix4fv(
+    sphereShader.setUniformMatrix4fv(
       gl,
       'u_view',
       view
     );
     
     let modelSphere = mat4.create();
+    let modelOrbit = mat4.create();
     
     data.forEach((value) => {
       if(!value.sphere) return;
       mat4.identity(modelSphere);
+      mat4.identity(modelOrbit);
       
       if(!value.isSun) {
         angleRot = (2 * util.PI * now / value.orbPeriod);
@@ -114,17 +129,43 @@ function mainLoop() {
       );
       mat4.rotateX(modelSphere, modelSphere, util.radians(90));
       
-      shader.setUniformMatrix4fv(
+      sphereShader.connectShader();
+      sphereShader.setUniformMatrix4fv(
         gl,
         'u_model',
         modelSphere
       );
-      shader.setUniform1i(
+      sphereShader.setUniform1i(
         gl,
         'u_image',
         0
       );
-      value.sphere.render(gl, shader);
+      value.sphere.render(gl, sphereShader);
+      
+      mat4.rotateZ(
+        modelOrbit,
+        modelOrbit,
+        util.radians(value.axisTilt)
+      );
+      
+      orbitShader.connectShader();
+      orbitShader.setUniformMatrix4fv(
+        gl,
+        'u_proj',
+        proj
+      );
+      orbitShader.setUniformMatrix4fv(
+        gl,
+        'u_view',
+        view
+      );
+      orbitShader.setUniformMatrix4fv(
+        gl,
+        'u_model',
+        modelOrbit
+      );
+      if(!value.isSun && value.orbit)
+        value.orbit.render(gl, orbitShader);
     });
     
     window.requestAnimationFrame(render);

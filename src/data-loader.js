@@ -33,7 +33,8 @@ const texPaths = [
         'rotPeriod':(parseFloat(value['Rotation Period'].slice(0, -8)) / 24),
         'isSun': isSun,
         'texturePath': texPaths[i],
-        'sphere': null // Actual reference to the sphere
+        'sphere': null, // Actual reference to the sphere
+        'orbit': null, // Actual reference to the orbit
       }
     );
   }
