@@ -2,7 +2,7 @@ import Shader from './lib/gl/shader/shader.js';
 import Renderer from './lib/gl/renderer/renderer.js';
 import * as mat4 from './lib/3d/mat4.js';
 import * as vec3 from './lib/3d/vec3.js';
-import Sphere, { source } from './lib/elements/sphere.js';
+import Sphere, { SphereSource } from './lib/elements/sphere/sphere.js';
 import { data } from './data-loader.js';
 import * as util from './lib/utils/utils.js';
 
@@ -32,8 +32,8 @@ function mainLoop() {
 
   let shader = new Shader(
     gl,
-    source.vertexSource,
-    source.fragmentSource
+    SphereSource.vertexSource,
+    SphereSource.fragmentSource
   );
 
   shader.disconnectShader();
@@ -43,7 +43,7 @@ function mainLoop() {
   
   const render = (now) => {
     Renderer.clear(gl);
-    now *= 0.001;
+    now *= 0.01;
 
     mat4.perspective(
       proj,
@@ -53,9 +53,14 @@ function mainLoop() {
     );
     mat4.lookAt(
       view,
-      [-500, 0, 0],
+      [-1200, 0, 0],
       [0, 0, 0],
       [0, 1, 0]
+    );
+    mat4.rotateZ(
+      view,
+      view,
+      util.radians(90)
     );
     
     shader.connectShader();
