@@ -1,12 +1,12 @@
 import {
   VertexArray,
   VertexBufferLayout
-} from '../gl/vertex-array/vertexArray.js';
-import VertexBuffer from '../gl/buffers/VertexBuffer.js';
-import IndexBuffer from '../gl/buffers/indexBuffer.js';
-import Renderer from '../gl/renderer/renderer.js';
-import * as util from '../utils/utils.js';
-import Texture from '../gl/texture/texture.js';
+} from '../../gl/vertex-array/vertexArray.js';
+import VertexBuffer from '../../gl/buffers/VertexBuffer.js';
+import IndexBuffer from '../../gl/buffers/indexBuffer.js';
+import Renderer from '../../gl/renderer/renderer.js';
+import * as util from '../../utils/utils.js';
+import Texture from '../../gl/texture/texture.js';
 
 class Sphere {
   vao = null;
@@ -98,11 +98,11 @@ class Sphere {
   }
   render(gl, shader) {
     this.texture.connectTexture(gl, 0);
-    Renderer.draw(gl, this.vao, this.ibo, shader);
+    Renderer.draw(gl, this.vao, this.ibo, shader, gl.TRIANGLES);
   }
 }
 
-export default Sphere
+export default Sphere;
 export {
-  source
-} from './sphere.shader.js'
+  source as SphereSource
+} from './sphere.shader.js';

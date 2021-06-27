@@ -124,16 +124,24 @@ class Renderer {
     Renderer.resizeToDisplaySize(gl.canvas);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   }
-  static draw(gl, va, ib, shader) {
+  static draw(gl, va, ib, shader, type) {
     shader.connectShader();
     va.connectVertexArray();
     ib.connectIndexBuffer();
 
     gl.drawElements(
-      gl.TRIANGLES,
+      type,
       ib.getCount(),
       gl.UNSIGNED_SHORT,
       null
+    );
+  }
+  static drawArrays(gl, vao, type, count) {
+    vao.connectVertexArray();
+    gl.drawArrays(
+      type,
+      0,
+      count
     );
   }
 
@@ -376,6 +384,50 @@ function rotateY(out, a, rad) {
   out[9] = a01 * s + a21 * c;
   out[10] = a02 * s + a22 * c;
   out[11] = a03 * s + a23 * c;
+  return out;
+}
+
+/**
+ * Rotates a matrix by the given angle around the Z axis
+ *
+ * @param {mat4} out the receiving matrix
+ * @param {ReadonlyMat4} a the matrix to rotate
+ * @param {Number} rad the angle to rotate the matrix by
+ * @returns {mat4} out
+ */
+function rotateZ(out, a, rad) {
+  let s = Math.sin(rad);
+  let c = Math.cos(rad);
+  let a00 = a[0];
+  let a01 = a[1];
+  let a02 = a[2];
+  let a03 = a[3];
+  let a10 = a[4];
+  let a11 = a[5];
+  let a12 = a[6];
+  let a13 = a[7];
+
+  if (a !== out) {
+    // If the source and destination differ, copy the unchanged last row
+    out[8] = a[8];
+    out[9] = a[9];
+    out[10] = a[10];
+    out[11] = a[11];
+    out[12] = a[12];
+    out[13] = a[13];
+    out[14] = a[14];
+    out[15] = a[15];
+  }
+
+  // Perform axis-specific matrix multiplication
+  out[0] = a00 * c + a10 * s;
+  out[1] = a01 * c + a11 * s;
+  out[2] = a02 * c + a12 * s;
+  out[3] = a03 * c + a13 * s;
+  out[4] = a10 * c - a00 * s;
+  out[5] = a11 * c - a01 * s;
+  out[6] = a12 * c - a02 * s;
+  out[7] = a13 * c - a03 * s;
   return out;
 }
 
@@ -756,7 +808,7 @@ function Texture(
   };
 }
 
-let source = {
+let source$1 = {
   vertexSource: `#version 300 es
       layout(location = 0) in vec3 a_position;
       layout(location = 1) in vec2 a_texCoords;
@@ -874,7 +926,67 @@ class Sphere {
   }
   render(gl, shader) {
     this.texture.connectTexture(gl, 0);
-    Renderer.draw(gl, this.vao, this.ibo, shader);
+    Renderer.draw(gl, this.vao, this.ibo, shader, gl.TRIANGLES);
+  }
+}
+
+let source = {
+  vertexSource: `#version 300 es
+      layout(location = 0) in vec3 a_position;
+      
+      uniform mat4 u_model;
+      uniform mat4 u_view;
+      uniform mat4 u_proj;
+      
+      void main(void) {
+        gl_Position = u_proj * u_view * u_model * vec4(a_position, 1.0);
+      }
+      `,
+  fragmentSource: `#version 300 es
+    precision highp float;
+      
+      out vec4 color;
+      void main(void) {
+        color = vec4(1.0, 1.0, 1.0, 1.0);
+      }
+      `
+};
+
+class Orbit {
+  vao = null;
+  radius = null;
+  name = '';
+  sectorCount = 100;
+  vertices = [];
+  constructor(gl, _radius, _name) {
+    this.radius = _radius;
+    this.name = _name;
+    this.init(gl);
+  }
+  
+  init(gl) {
+    let angle = 0;
+    for(let i = 0; i <= this.sectorCount; ++i) {
+      angle = 2 * PI * i / this.sectorCount;
+      this.vertices.push(this.radius * sin(angle));
+      this.vertices.push(0.0);
+      this.vertices.push(this.radius * cos(angle));
+    }
+    
+    this.vao = new VertexArray(gl);
+    let vb = new VertexBuffer(
+      gl,
+      new Float32Array(this.vertices)
+    );
+    let vbl = new VertexBufferLayout(gl);
+    vbl.pushBack(3, gl.FLOAT, false);
+    this.vao.addBuffer(gl, vb, vbl);
+    
+    this.vao.disconnectVertexArray();
+    vb.disconnectVertexBuffer();
+  }
+  render(gl, shader) {
+    Renderer.drawArrays(gl, this.vao, gl.LINE_LOOP, this.sectorCount);
   }
 }
 
@@ -1085,15 +1197,15 @@ const solarData = {
 const data = new Array();
 
 const texPaths = [
-  '../res/2k_sun.jpg',
-  '../res/2k_mercury.jpg',
-  '../res/2k_venus_surface.jpg',
-  '../res/2k_earth_daymap.jpg',
-  '../res/2k_mars.jpg',
-  '../res/2k_jupiter.jpg',
-  '../res/2k_saturn.jpg',
-  '../res/2k_uranus.jpg',
-  '../res/2k_neptune.jpg'
+  './res/2k_sun.jpg',
+  './res/2k_mercury.jpg',
+  './res/2k_venus_surface.jpg',
+  './res/2k_earth_daymap.jpg',
+  './res/2k_mars.jpg',
+  './res/2k_jupiter.jpg',
+  './res/2k_saturn.jpg',
+  './res/2k_uranus.jpg',
+  './res/2k_neptune.jpg'
 ];
 
 {
@@ -1113,20 +1225,23 @@ const texPaths = [
         'rotPeriod':(parseFloat(value['Rotation Period'].slice(0, -8)) / 24),
         'isSun': isSun,
         'texturePath': texPaths[i],
-        'sphere': null // Actual reference to the sphere
+        'sphere': null, // Actual reference to the sphere
+        'orbit': null, // Actual reference to the orbit
       }
     );
   }
 }
 
 const canvas = document.getElementById('canvas');
-const gl = canvas.getContext('webgl2');
-// ?? canvas.getContext('experimental-webgl2');
+const gl = canvas.getContext('webgl2')
+ ?? canvas.getContext('experimental-webgl2');
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
 function mainLoop() {
   data.forEach((value) => {
     if(!value.isSun) {
       value.distance += 109;
+      value.radius *= 1;
     } else {
       value.radius = 109;
     }
@@ -1136,18 +1251,29 @@ function mainLoop() {
       value.name,
       value.texturePath
     );
+    value.orbit = new Orbit(
+      gl,
+      value.distance,
+      value.name
+    );
   });
 
   let angleRot = 0;
   let angleRotSelf = 0;
 
-  let shader = new Shader(
+  let sphereShader = new Shader(
+    gl,
+    source$1.vertexSource,
+    source$1.fragmentSource
+  );
+  let orbitShader = new Shader(
     gl,
     source.vertexSource,
     source.fragmentSource
   );
 
-  shader.disconnectShader();
+  sphereShader.disconnectShader();
+  orbitShader.disconnectShader();
   
   let proj = create$1();
   let view = create$1();
@@ -1158,34 +1284,41 @@ function mainLoop() {
 
     perspective(
       proj,
-      PI / 2,
+      PI / 4,
       gl.canvas.width / gl.canvas.height,
-      1, 2000
+      1, 80000
     );
     lookAt(
       view,
-      [-500, 0, 0],
+      [-1000, 0, 0],
       [0, 0, 0],
       [0, 1, 0]
     );
+    rotateZ(
+      view,
+      view,
+      radians(0)
+    );
     
-    shader.connectShader();
-    shader.setUniformMatrix4fv(
+    sphereShader.connectShader();
+    sphereShader.setUniformMatrix4fv(
       gl,
       'u_proj',
       proj
     );
-    shader.setUniformMatrix4fv(
+    sphereShader.setUniformMatrix4fv(
       gl,
       'u_view',
       view
     );
     
     let modelSphere = create$1();
+    let modelOrbit = create$1();
     
     data.forEach((value) => {
       if(!value.sphere) return;
       identity(modelSphere);
+      identity(modelOrbit);
       
       if(!value.isSun) {
         angleRot = (2 * PI * now / value.orbPeriod);
@@ -1220,17 +1353,43 @@ function mainLoop() {
       );
       rotateX(modelSphere, modelSphere, radians(90));
       
-      shader.setUniformMatrix4fv(
+      sphereShader.connectShader();
+      sphereShader.setUniformMatrix4fv(
         gl,
         'u_model',
         modelSphere
       );
-      shader.setUniform1i(
+      sphereShader.setUniform1i(
         gl,
         'u_image',
         0
       );
-      value.sphere.render(gl, shader);
+      value.sphere.render(gl, sphereShader);
+      
+      rotateZ(
+        modelOrbit,
+        modelOrbit,
+        radians(value.axisTilt)
+      );
+      
+      orbitShader.connectShader();
+      orbitShader.setUniformMatrix4fv(
+        gl,
+        'u_proj',
+        proj
+      );
+      orbitShader.setUniformMatrix4fv(
+        gl,
+        'u_view',
+        view
+      );
+      orbitShader.setUniformMatrix4fv(
+        gl,
+        'u_model',
+        modelOrbit
+      );
+      if(!value.isSun && value.orbit)
+        value.orbit.render(gl, orbitShader);
     });
     
     window.requestAnimationFrame(render);
