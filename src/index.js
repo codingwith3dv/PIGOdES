@@ -23,7 +23,7 @@ function mainLoop() {
   data.forEach((value) => {
     if(!value.isSun) {
       value.distance += 109;
-      value.radius *= 10;
+      value.radius *= 1;
     } else {
       value.radius = 109;
     }
