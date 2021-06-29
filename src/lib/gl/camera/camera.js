@@ -7,7 +7,10 @@ class Camera {
   target = vec3.fromValues(0, 0, 0);
   up = vec3.fromValues(0, 1, 0);
   matrix = mat4.create();
-  
+  trackingMouse = false;
+  lastX = 0;
+  lastY = 0;
+
   constructor() {}
 
   getVM() {
@@ -24,9 +27,21 @@ class Camera {
     );
     return this.matrix;
   }
+
+  mouseUp(ev) {
+    this.trackingMouse = false;
+  }
+  mouseDown(ev) {
+    this.trackingMouse = true;
+  }
+  mouseMove(ev) {
+    let rect = ev.currentTarget.getBoundingClientRect();
+    let x = ev.clientX - rect.top;
+    let y = ev.clientY - rect.left;
+    console.log(deltaX);
+  }
 }
 
-let cam = new Camera();
 export {
-  cam as default
+  Camera as default
 };
