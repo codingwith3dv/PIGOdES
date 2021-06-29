@@ -42,7 +42,7 @@ class Orbit {
     vb.disconnectVertexBuffer();
   }
   render(gl, shader) {
-    Renderer.drawArrays(gl, this.vao, gl.LINE_LOOP, this.sectorCount);
+    Renderer.drawArrays(gl, this.vao, gl.LINES, this.sectorCount);
   }
 }
 

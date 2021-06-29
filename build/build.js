@@ -986,7 +986,7 @@ class Orbit {
     vb.disconnectVertexBuffer();
   }
   render(gl, shader) {
-    Renderer.drawArrays(gl, this.vao, gl.LINE_LOOP, this.sectorCount);
+    Renderer.drawArrays(gl, this.vao, gl.LINES, this.sectorCount);
   }
 }
 
@@ -1232,12 +1232,44 @@ const texPaths = [
   }
 }
 
+class Camera {
+  position = fromValues(-1000, 0, 0);
+  target = fromValues(0, 0, 0);
+  up = fromValues(0, 1, 0);
+  matrix = create$1();
+  
+  constructor() {}
+
+  getVM() {
+    lookAt(
+      this.matrix,
+      this.position,
+      this.target,
+      this.up
+    );
+    rotateZ(
+      this.matrix,
+      this.matrix,
+      radians(23)
+    );
+    return this.matrix;
+  }
+}
+
+let cam = new Camera();
+
 const canvas = document.getElementById('canvas');
 const gl = canvas.getContext('webgl2')
  ?? canvas.getContext('experimental-webgl2');
 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
 function mainLoop() {
+  gl.canvas.addEventListener('touchmove', (e) => {
+    e.touches[0].clientX;
+    e.touches[0].clientY;
+    // alert(mouseX);
+  });
+  
   data.forEach((value) => {
     if(!value.isSun) {
       value.distance += 109;
@@ -1276,7 +1308,6 @@ function mainLoop() {
   orbitShader.disconnectShader();
   
   let proj = create$1();
-  let view = create$1();
   
   const render = (now) => {
     Renderer.clear(gl);
@@ -1288,17 +1319,7 @@ function mainLoop() {
       gl.canvas.width / gl.canvas.height,
       1, 80000
     );
-    lookAt(
-      view,
-      [-1000, 0, 0],
-      [0, 0, 0],
-      [0, 1, 0]
-    );
-    rotateZ(
-      view,
-      view,
-      radians(0)
-    );
+    let view = cam.getVM();
     
     sphereShader.connectShader();
     sphereShader.setUniformMatrix4fv(
