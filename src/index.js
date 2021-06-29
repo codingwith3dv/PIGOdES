@@ -6,6 +6,7 @@ import Sphere, { SphereSource } from './lib/elements/sphere/sphere.js';
 import Orbit, { OrbitSource } from './lib/elements/orbit/orbit.js';
 import { data } from './data-loader.js';
 import * as util from './lib/utils/utils.js';
+import cam from './lib/gl/camera/camera.js';
 
 const canvas = document.getElementById('canvas');
 const gl = canvas.getContext('webgl2')
@@ -13,10 +14,16 @@ const gl = canvas.getContext('webgl2')
 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
 function mainLoop() {
+  gl.canvas.addEventListener('touchmove', (e) => {
+    let mouseX = e.touches[0].clientX;
+    let mouseY = e.touches[0].clientY;
+    // alert(mouseX);
+  });
+  
   data.forEach((value) => {
     if(!value.isSun) {
       value.distance += 109;
-      value.radius *= 1;
+      value.radius *= 10;
     } else {
       value.radius = 109;
     }
@@ -52,7 +59,6 @@ function mainLoop() {
   orbitShader.disconnectShader();
   
   let proj = mat4.create();
-  let view = mat4.create();
   
   const render = (now) => {
     Renderer.clear(gl);
@@ -64,17 +70,7 @@ function mainLoop() {
       gl.canvas.width / gl.canvas.height,
       1, 80000
     );
-    mat4.lookAt(
-      view,
-      [-1000, 0, 0],
-      [0, 0, 0],
-      [0, 1, 0]
-    );
-    mat4.rotateZ(
-      view,
-      view,
-      util.radians(0)
-    );
+    let view = cam.getVM();
     
     sphereShader.connectShader();
     sphereShader.setUniformMatrix4fv(
