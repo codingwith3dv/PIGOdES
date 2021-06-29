@@ -36,7 +36,7 @@
 }
 
 .main-body {
-  background-image: url("spwURB.jpg");
+  background-image: url("./res/spwURB.jpg");
   min-height: 750px;
   background-attachment: fixed;
   background-position: center;
