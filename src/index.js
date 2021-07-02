@@ -2,85 +2,172 @@ import Shader from './lib/gl/shader/shader.js';
 import Renderer from './lib/gl/renderer/renderer.js';
 import * as mat4 from './lib/3d/mat4.js';
 import * as vec3 from './lib/3d/vec3.js';
-import Cube, { source } from './lib/elements/cube.js';
+import Sphere, { SphereSource } from './lib/elements/sphere/sphere.js';
+import Orbit, { OrbitSource } from './lib/elements/orbit/orbit.js';
 import { data } from './data-loader.js';
+import * as util from './lib/utils/utils.js';
+import cam from './lib/gl/camera/camera.js';
 
 const canvas = document.getElementById('canvas');
 const gl = canvas.getContext('webgl2')
-// ?? canvas.getContext('experimental-webgl2');
+ ?? canvas.getContext('experimental-webgl2');
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
 function mainLoop() {
-  let view = mat4.create();
-  mat4.lookAt(view, vec3.fromValues(0, 0, 0), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
-
-  data.forEach((value, key) => {
-    data.get(key).sphere = new Cube(gl, value.radius);
+  gl.canvas.addEventListener('touchmove', (e) => {
+    let mouseX = e.touches[0].clientX;
+    let mouseY = e.touches[0].clientY;
+    // alert(mouseX);
+  });
+  
+  data.forEach((value) => {
+    if(!value.isSun) {
+      value.distance += 109;
+      value.radius *= 1;
+    } else {
+      value.radius = 109;
+    }
+    value.sphere = new Sphere(
+      gl,
+      value.radius,
+      value.name,
+      value.texturePath
+    );
+    value.orbit = new Orbit(
+      gl,
+      value.distance,
+      value.name
+    );
   });
 
-  let cos = Math.cos
-  let sin = Math.sin
-  let radians = (d) => d * Math.PI / 180
-  let angleRot = 0
+  let angleRot = 0;
+  let angleRotSelf = 0;
+  let then = 0;
 
-  let shader = new Shader(
+  let sphereShader = new Shader(
     gl,
-    source.vertexSource,
-    source.fragmentSource
+    SphereSource.vertexSource,
+    SphereSource.fragmentSource
+  );
+  let orbitShader = new Shader(
+    gl,
+    OrbitSource.vertexSource,
+    OrbitSource.fragmentSource
   );
 
-  shader.disconnectShader();
-  let angle = 0.5;
-  let inc = 0.001;
+  sphereShader.disconnectShader();
+  orbitShader.disconnectShader();
+  
   let proj = mat4.create();
-  const render = () => {
+  
+  const render = (now) => {
     Renderer.clear(gl);
-    angleRot = angleRot + 0.1
+    now *= 0.001;
 
-    mat4.perspective(proj, Math.PI / 2, gl.canvas.width / gl.canvas.height, 1, 2000);
-    mat4.lookAt(view, vec3.fromValues(0, 0, -20), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
-
-    shader.connectShader();
-    shader.setUniformMatrix4fv(
+    mat4.perspective(
+      proj,
+      util.PI / 4,
+      gl.canvas.width / gl.canvas.height,
+      1, 80000
+    );
+    let view = cam.getVM();
+    
+    sphereShader.connectShader();
+    sphereShader.setUniformMatrix4fv(
       gl,
       'u_proj',
       proj
     );
-    shader.setUniformMatrix4fv(
+    sphereShader.setUniformMatrix4fv(
       gl,
       'u_view',
       view
     );
     
     let modelSphere = mat4.create();
+    let modelOrbit = mat4.create();
     
-    data.forEach((value, key) => {
+    data.forEach((value) => {
+      if(!value.sphere) return;
+      mat4.identity(modelSphere);
+      mat4.identity(modelOrbit);
+      
+      if(!value.isSun) {
+        angleRot = (2 * util.PI * now / value.orbPeriod);
+        angleRotSelf = (2 * util.PI * now * value.rotPeriod);
+      } else {
+        angleRot = 0;
+        angleRotSelf = (2 * util.PI * now * value.rotPeriod);
+      }
       mat4.translate(
         modelSphere,
         modelSphere,
         vec3.fromValues(
-          value.distance * cos(radians(value.axisTilt)) * sin(angleRot),
-          value.distance * sin(radians(value.axisTilt)) * sin(angleRot),
-          value.distance * cos(angleRot)
+          value.distance *
+            util.cos(util.radians(value.axisTilt)) *
+            util.sin(angleRot),
+          value.distance *
+            util.sin(util.radians(value.axisTilt)) *
+            util.sin(angleRot),
+          value.distance * util.cos(angleRot),
         )
       );
-      mat4.rotate(
+      
+      mat4.rotateX(
         modelSphere,
         modelSphere,
-        radians(value.axisTilt),
-        [1, 0, 0]
+        util.radians(value.axisTilt)
       );
-      shader.setUniformMatrix4fv(
+      mat4.rotateY(
+        modelSphere,
+        modelSphere,
+        angleRotSelf
+      );
+      mat4.rotateX(modelSphere, modelSphere, util.radians(90));
+      
+      sphereShader.connectShader();
+      sphereShader.setUniformMatrix4fv(
         gl,
         'u_model',
         modelSphere
       );
-      value.sphere.render(gl, shader);
+      sphereShader.setUniform1i(
+        gl,
+        'u_image',
+        0
+      );
+      value.sphere.render(gl, sphereShader);
+      
+      mat4.rotateZ(
+        modelOrbit,
+        modelOrbit,
+        util.radians(value.axisTilt)
+      );
+      
+      orbitShader.connectShader();
+      orbitShader.setUniformMatrix4fv(
+        gl,
+        'u_proj',
+        proj
+      );
+      orbitShader.setUniformMatrix4fv(
+        gl,
+        'u_view',
+        view
+      );
+      orbitShader.setUniformMatrix4fv(
+        gl,
+        'u_model',
+        modelOrbit
+      );
+      if(!value.isSun && value.orbit)
+        value.orbit.render(gl, orbitShader);
     });
     
     window.requestAnimationFrame(render);
   }
 
-  render();
+  window.requestAnimationFrame(render);
 }
 
 mainLoop();

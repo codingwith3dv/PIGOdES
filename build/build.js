@@ -103,6 +103,17 @@ function Shader(
       matrix
     );
   };
+  
+  this.setUniform1i = (
+    gl,
+    name,
+    img
+  ) => {
+    gl.uniform1i(
+      getLocation(id, name),
+      img
+    );
+  };
 }
 
 class Renderer {
@@ -113,16 +124,24 @@ class Renderer {
     Renderer.resizeToDisplaySize(gl.canvas);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   }
-  static draw(gl, va, ib, shader) {
+  static draw(gl, va, ib, shader, type) {
     shader.connectShader();
     va.connectVertexArray();
     ib.connectIndexBuffer();
 
     gl.drawElements(
-      gl.TRIANGLES,
+      type,
       ib.getCount(),
       gl.UNSIGNED_SHORT,
       null
+    );
+  }
+  static drawArrays(gl, vao, type, count) {
+    vao.connectVertexArray();
+    gl.drawArrays(
+      type,
+      0,
+      count
     );
   }
 
@@ -281,6 +300,50 @@ function translate(out, a, v) {
 }
 
 /**
+ * Rotates a matrix by the given angle around the X axis
+ *
+ * @param {mat4} out the receiving matrix
+ * @param {ReadonlyMat4} a the matrix to rotate
+ * @param {Number} rad the angle to rotate the matrix by
+ * @returns {mat4} out
+ */
+function rotateX(out, a, rad) {
+  let s = Math.sin(rad);
+  let c = Math.cos(rad);
+  let a10 = a[4];
+  let a11 = a[5];
+  let a12 = a[6];
+  let a13 = a[7];
+  let a20 = a[8];
+  let a21 = a[9];
+  let a22 = a[10];
+  let a23 = a[11];
+
+  if (a !== out) {
+    // If the source and destination differ, copy the unchanged rows
+    out[0] = a[0];
+    out[1] = a[1];
+    out[2] = a[2];
+    out[3] = a[3];
+    out[12] = a[12];
+    out[13] = a[13];
+    out[14] = a[14];
+    out[15] = a[15];
+  }
+
+  // Perform axis-specific matrix multiplication
+  out[4] = a10 * c + a20 * s;
+  out[5] = a11 * c + a21 * s;
+  out[6] = a12 * c + a22 * s;
+  out[7] = a13 * c + a23 * s;
+  out[8] = a20 * c - a10 * s;
+  out[9] = a21 * c - a11 * s;
+  out[10] = a22 * c - a12 * s;
+  out[11] = a23 * c - a13 * s;
+  return out;
+}
+
+/**
  * Rotates a matrix by the given angle around the Y axis
  *
  * @param {mat4} out the receiving matrix
@@ -321,6 +384,50 @@ function rotateY(out, a, rad) {
   out[9] = a01 * s + a21 * c;
   out[10] = a02 * s + a22 * c;
   out[11] = a03 * s + a23 * c;
+  return out;
+}
+
+/**
+ * Rotates a matrix by the given angle around the Z axis
+ *
+ * @param {mat4} out the receiving matrix
+ * @param {ReadonlyMat4} a the matrix to rotate
+ * @param {Number} rad the angle to rotate the matrix by
+ * @returns {mat4} out
+ */
+function rotateZ(out, a, rad) {
+  let s = Math.sin(rad);
+  let c = Math.cos(rad);
+  let a00 = a[0];
+  let a01 = a[1];
+  let a02 = a[2];
+  let a03 = a[3];
+  let a10 = a[4];
+  let a11 = a[5];
+  let a12 = a[6];
+  let a13 = a[7];
+
+  if (a !== out) {
+    // If the source and destination differ, copy the unchanged last row
+    out[8] = a[8];
+    out[9] = a[9];
+    out[10] = a[10];
+    out[11] = a[11];
+    out[12] = a[12];
+    out[13] = a[13];
+    out[14] = a[14];
+    out[15] = a[15];
+  }
+
+  // Perform axis-specific matrix multiplication
+  out[0] = a00 * c + a10 * s;
+  out[1] = a01 * c + a11 * s;
+  out[2] = a02 * c + a12 * s;
+  out[3] = a03 * c + a13 * s;
+  out[4] = a10 * c - a00 * s;
+  out[5] = a11 * c - a01 * s;
+  out[6] = a12 * c - a02 * s;
+  out[7] = a13 * c - a03 * s;
   return out;
 }
 
@@ -650,128 +757,256 @@ function IndexBuffer(
   };
 }
 
-class Cube {
-  static source = {
-    vertexSource: `#version 300 es
+let cos = Math.cos;
+let sin = Math.sin;
+let PI = Math.PI;
+let radians = (d) => d * PI / 180;
+
+function Texture(
+  gl,
+  path
+) {
+  let id = 0;
+  let filePath = path;
+  
+  id = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, id);
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    1,
+    1,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    new Uint8Array([0, 0, 255, 255])
+  );
+  
+  let img = new Image();
+  img.src = filePath;
+  img.addEventListener('load', () => {
+    gl.bindTexture(gl.TEXTURE_2D, id);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA8,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      img
+    );
+    gl.generateMipmap(gl.TEXTURE_2D);
+  });
+  
+  this.connectTexture = (gl, slot = 0) => {
+    gl.activeTexture(gl.TEXTURE0 + slot);
+    gl.bindTexture(gl.TEXTURE_2D, id);
+  };
+  
+  this.disconnectTexture = (gl) => {
+    gl.bindTexture(gl.TEXTURE_2D, null);
+  };
+}
+
+let source$1 = {
+  vertexSource: `#version 300 es
       layout(location = 0) in vec3 a_position;
-      layout(location = 1) in float a_op;
+      layout(location = 1) in vec2 a_texCoords;
+      
       uniform mat4 u_model;
       uniform mat4 u_view;
       uniform mat4 u_proj;
-      out vec4 v_color;
+      
+      out vec2 v_texCoords;
       
       void main(void) {
         gl_Position = u_proj * u_view * u_model * vec4(a_position, 1.0);
-        v_color = vec4(0.2, 0.6, 0.8, a_op);
+        v_texCoords = a_texCoords;
       }
       `,
-    fragmentSource: `#version 300 es
+  fragmentSource: `#version 300 es
     precision highp float;
-      in vec4 v_color;
+      in vec2 v_texCoords;
+      uniform sampler2D u_image;
+      
       out vec4 color;
       void main(void) {
-        color = v_color;
+        color = texture(u_image, v_texCoords);
       }
       `
-  };
+};
+
+class Sphere {
   vao = null;
   ibo = null;
-  constructor(gl, l) {
-    this.init(gl, l);
+  radius = 0;
+  name = '';
+  stackCount = 100;
+  sectorCount = 100;
+  texture = null;
+  constructor(gl, _radius, _name, path) {
+    this.radius = _radius;
+    this.name   = _name;
+    this.texture = new Texture(gl, path);
+    this.init(gl);
   }
-
-  init(gl, l) {
-    let op1 = 0.1;
-    let op2 = 0.2;
-    let op3 = 0.3;
-    let op4 = 0.4;
-    let op5 = 0.5;
-    let op6 = 0.6;
-    let vertex = [
-      // front
-      -l, -l, -l, op1,
-       l, -l, -l, op1,
-       l,  l, -l, op1,
-      -l,  l, -l, op1,
-
-      // back
-      -l, -l,  l, op2,
-      -l,  l,  l, op2,
-       l,  l,  l, op2,
-       l, -l,  l, op2,
-       
-      // left
-      -l, -l,  l, op3,
-      -l, -l, -l, op3,
-      -l,  l, -l, op3,
-      -l,  l,  l, op3,
-       
-      // right
-       l, -l, -l, op4,
-       l, -l,  l, op4,
-       l,  l,  l, op4,
-       l,  l, -l, op4,
-       
-      // top
-      -l,  l, -l, op5,
-       l,  l, -l, op5,
-       l,  l,  l, op5,
-      -l,  l,  l, op5,
-      
-      // bottom
-       l, -l,  l, op6,
-      -l, -l,  l, op6,
-      -l, -l, -l, op6,
-       l, -l, -l, op6
-    ];
-    let indices = [
-       0,  1,  2,  2,  3,  0,
-       4,  5,  6,  6,  7,  4,
-       8,  9, 10, 10, 11,  8,
-      12, 13, 14, 14, 15, 12,
-      16, 17, 18, 18, 19, 16,
-      20, 21, 22, 22, 23, 20
-    ];
+  init(gl) {
+    let vertices = [];
+    let xy;
+    let z;
+    let x;
+    let y;
+    let stackAngle;
+    let sectorAngle;
+    let sectorStep = 2 * PI / this.sectorCount;
+    let stackStep = PI / this.stackCount;
+    
+    // vertices
+    for (let i = 0; i <= this.stackCount; ++i) {
+      stackAngle = PI / 2 - i * stackStep;
+      xy = this.radius * cos(stackAngle);
+      z = this.radius * sin(stackAngle);
+    
+      for (let j = 0; j <= this.sectorCount; ++j) {
+        sectorAngle = j * sectorStep;
+    
+        x = xy * cos(sectorAngle);
+        y = xy * sin(sectorAngle);
+        vertices.push(x);
+        vertices.push(y);
+        vertices.push(z);
+        
+        vertices.push(j / this.sectorCount);
+        vertices.push(i / this.stackCount);
+      }
+    }
+    
+    // indices
+    let indices = [];
+    let k1;
+    let k2;
+    for (let i = 0; i < this.stackCount; ++i) {
+      k1 = i * (this.sectorCount + 1);
+      k2 = k1 + this.sectorCount + 1;
+    
+      for (let j = 0; j < this.sectorCount; ++j, ++k1, ++k2) {
+        if (i != 0) {
+          indices.push(k1);
+          indices.push(k2);
+          indices.push(k1 + 1);
+        }
+    
+        if (i != (this.stackCount - 1)) {
+          indices.push(k1 + 1);
+          indices.push(k2);
+          indices.push(k2 + 1);
+        }
+      }
+    }
     
     this.vao = new VertexArray(gl);
     let vb = new VertexBuffer(
       gl,
-      new Float32Array(vertex)
+      new Float32Array(vertices)
     );
     let vbl = new VertexBufferLayout(gl);
     vbl.pushBack(3, gl.FLOAT, false);
-    vbl.pushBack(1, gl.FLOAT, false);
+    vbl.pushBack(2, gl.FLOAT, false);
     this.vao.addBuffer(gl, vb, vbl);
-
+    
     this.ibo = new IndexBuffer(
       gl,
       new Uint16Array(indices),
       indices.length
     );
-
+    
     this.vao.disconnectVertexArray();
     vb.disconnectVertexBuffer();
     this.ibo.disconnectIndexBuffer();
   }
-  
   render(gl, shader) {
-    Renderer.draw(gl, this.vao, this.ibo, shader);
+    this.texture.connectTexture(gl, 0);
+    Renderer.draw(gl, this.vao, this.ibo, shader, gl.TRIANGLES);
   }
 }
 
-function map(val, max, min) {
-  return (val - min) / (max - min);
+let source = {
+  vertexSource: `#version 300 es
+      layout(location = 0) in vec3 a_position;
+      
+      uniform mat4 u_model;
+      uniform mat4 u_view;
+      uniform mat4 u_proj;
+      
+      void main(void) {
+        gl_Position = u_proj * u_view * u_model * vec4(a_position, 1.0);
+      }
+      `,
+  fragmentSource: `#version 300 es
+    precision highp float;
+      
+      out vec4 color;
+      void main(void) {
+        color = vec4(1.0, 1.0, 1.0, 1.0);
+      }
+      `
+};
+
+class Orbit {
+  vao = null;
+  radius = null;
+  name = '';
+  sectorCount = 100;
+  vertices = [];
+  constructor(gl, _radius, _name) {
+    this.radius = _radius;
+    this.name = _name;
+    this.init(gl);
+  }
+  
+  init(gl) {
+    let angle = 0;
+    for(let i = 0; i <= this.sectorCount; ++i) {
+      angle = 2 * PI * i / this.sectorCount;
+      this.vertices.push(this.radius * sin(angle));
+      this.vertices.push(0.0);
+      this.vertices.push(this.radius * cos(angle));
+    }
+    
+    this.vao = new VertexArray(gl);
+    let vb = new VertexBuffer(
+      gl,
+      new Float32Array(this.vertices)
+    );
+    let vbl = new VertexBufferLayout(gl);
+    vbl.pushBack(3, gl.FLOAT, false);
+    this.vao.addBuffer(gl, vb, vbl);
+    
+    this.vao.disconnectVertexArray();
+    vb.disconnectVertexBuffer();
+  }
+  render(gl, shader) {
+    Renderer.drawArrays(gl, this.vao, gl.LINES, this.sectorCount);
+  }
 }
 
-const planetData = {
+const solarData = {
   "data": [
     {
-      "Planet": "MERCURY",
+      "name": "SUN",
+      "Diameter": 109 * 12756,
+      "Rotation Period": "1.125 (hours)",
+      "Orbital Period": "0 (days)",
+      "Distance from Sun": 0,
+      "Obliquity to Orbit": 7.25
+    },
+    {
+      "name": "MERCURY",
       "Mass": "0.33 (10^24kg)",
-      "Diameter": "4879 (km)",
+      "Diameter": (4879),
       "Density": "5427 (kg/m3)",
       "Gravity": "3.7 (m/s2)",
-      "Escape Velocity": "4.3 (km/s)",
+      "Escape Velocity": 4.3,
       "Rotation Period": "1407.6 (hours)",
       "Length of Day": "4222.6 (hours)",
       "Distance from Sun": 57.9,
@@ -781,7 +1016,7 @@ const planetData = {
       "Orbital Velocity": "47.4 (km/s)",
       "Orbital Inclination": "7.0 (degrees)",
       "Orbital Eccentricity": "0.205",
-      "Obliquity to Orbit": "0.034 (degrees)",
+      "Obliquity to Orbit": 0.034,
       "Mean Temperature": "167 (C)",
       "Surface Pressure": "0 (bars)",
       "Number of Moons": "0",
@@ -790,12 +1025,12 @@ const planetData = {
     },
 
     {
-      "Planet": "VENUS",
+      "name": "VENUS",
       "Mass": "4.87 (10^24kg)",
-      "Diameter": "12,104 (km)",
+      "Diameter": (12104),
       "Density": "5243 (kg/m3)",
       "Gravity": "8.9 (m/s2)",
-      "Escape Velocity": "10.4 (km/s)",
+      "Escape Velocity": 10.4,
       "Rotation Period": "-5832.5 (hours)",
       "Length of Day": "2802.0 (hours)",
       "Distance from Sun": 108.2,
@@ -805,7 +1040,7 @@ const planetData = {
       "Orbital Velocity": "35.0 (km/s)",
       "Orbital Inclination": "3.4 (degrees)",
       "Orbital Eccentricity": "0.007",
-      "Obliquity to Orbit": "177.4 (degrees)",
+      "Obliquity to Orbit": 177.4,
       "Mean Temperature": "464 (C)",
       "Surface Pressure": "92 (bars)",
       "Number of Moons": "0",
@@ -814,12 +1049,12 @@ const planetData = {
     },
 
     {
-      "Planet": "EARTH",
+      "name": "EARTH",
       "Mass": "5.97 (10^24kg)",
-      "Diameter": "12,756 (km)",
+      "Diameter": (12756),
       "Density": "5514 (kg/m3)",
       "Gravity": "9.8 (m/s2)",
-      "Escape Velocity": "11.2 (km/s)",
+      "Escape Velocity": 11.2,
       "Rotation Period": "23.9 (hours)",
       "Length of Day": "24.0 (hours)",
       "Distance from Sun": 149.6,
@@ -829,7 +1064,7 @@ const planetData = {
       "Orbital Velocity": "29.8 (km/s)",
       "Orbital Inclination": "0.0 (degrees)",
       "Orbital Eccentricity": "0.017",
-      "Obliquity to Orbit": "23.4 (degrees)",
+      "Obliquity to Orbit": 23.4,
       "Mean Temperature": "15 (C)",
       "Surface Pressure": "1 (bars)",
       "Number of Moons": "1",
@@ -838,12 +1073,12 @@ const planetData = {
     },
 
     {
-      "Planet": "MARS",
+      "name": "MARS",
       "Mass": "0.642 (10^24kg)",
-      "Diameter": "6792 (km)",
+      "Diameter": (6792),
       "Density": "3933 (kg/m3)",
       "Gravity": "3.7 (m/s2)",
-      "Escape Velocity": "5.0 (km/s)",
+      "Escape Velocity": 5.0,
       "Rotation Period": "24.6 (hours)",
       "Length of Day": "24.7 (hours)",
       "Distance from Sun": 227.9,
@@ -853,7 +1088,7 @@ const planetData = {
       "Orbital Velocity": "24.1 (km/s)",
       "Orbital Inclination": "1.9 (degrees)",
       "Orbital Eccentricity": "0.094",
-      "Obliquity to Orbit": "25.2 (degrees)",
+      "Obliquity to Orbit": 25.2,
       "Mean Temperature": "-65 (C)",
       "Surface Pressure": "0.01 (bars)",
       "Number of Moons": "2",
@@ -862,12 +1097,12 @@ const planetData = {
     },
 
     {
-      "Planet": "JUPITER",
+      "name": "JUPITER",
       "Mass": "1898 (10^24kg)",
-      "Diameter": "142,984 (km)",
+      "Diameter": (142984),
       "Density": "1326 (kg/m3)",
       "Gravity": "23.1 (m/s2)",
-      "Escape Velocity": "59.5 (km/s)",
+      "Escape Velocity": 59.5,
       "Rotation Period": "9.9 (hours)",
       "Length of Day": "9.9 (hours)",
       "Distance from Sun": 778.6,
@@ -877,7 +1112,7 @@ const planetData = {
       "Orbital Velocity": "13.1 (km/s)",
       "Orbital Inclination": "1.3 (degrees)",
       "Orbital Eccentricity": "0.049",
-      "Obliquity to Orbit": "3.1 (degrees)",
+      "Obliquity to Orbit": 3.1,
       "Mean Temperature": "-110 (C)",
       "Surface Pressure": "Unknown (bars)",
       "Number of Moons": "79",
@@ -886,22 +1121,22 @@ const planetData = {
     },
 
     {
-      "Planet": "SATURN",
+      "name": "SATURN",
       "Mass": "568 (10^24kg)",
-      "Diameter": "120,536 (km)",
+      "Diameter": (120536),
       "Density": "687 (kg/m3)",
       "Gravity": "9.0 (m/s2)",
-      "Escape Velocity": "35.5 (km/s)",
+      "Escape Velocity": 35.5,
       "Rotation Period": "10.7 (hours)",
       "Length of Day": "10.7 (hours)",
       "Distance from Sun": 1433.5,
       "Perihelion": "1352.6 (10^6 km)",
       "Aphelion": "1514.5 (10^6 km)",
-      "Orbital Period": "10,747 (days)",
+      "Orbital Period": "10747 (days)",
       "Orbital Velocity": "9.7 (km/s)",
       "Orbital Inclination": "2.5 (degrees)",
       "Orbital Eccentricity": "0.057",
-      "Obliquity to Orbit": "26.7 (degrees)",
+      "Obliquity to Orbit": 26.7,
       "Mean Temperature": "-140 (C)",
       "Surface Pressure": "Unknown (bars)",
       "Number of Moons": "82",
@@ -910,22 +1145,22 @@ const planetData = {
     },
 
     {
-      "Planet": "URANUS",
+      "name": "URANUS",
       "Mass": "86.8 (10^24kg)",
-      "Diameter": "51,118 (km)",
+      "Diameter": (51118),
       "Density": "1271 (kg/m3)",
       "Gravity": "8.7 (m/s2)",
-      "Escape Velocity": "21.3 (km/s)",
+      "Escape Velocity": 21.3,
       "Rotation Period": "-17.2 (hours)",
       "Length of Day": "17.2 (hours)",
       "Distance from Sun": 2872.5,
       "Perihelion": "2741.3 (10^6 km)",
       "Aphelion": "3003.6 (10^6 km)",
-      "Orbital Period": "30,589 (days)",
+      "Orbital Period": "30589 (days)",
       "Orbital Velocity": "6.8 (km/s)",
       "Orbital Inclination": "0.8 (degrees)",
       "Orbital Eccentricity": "0.046",
-      "Obliquity to Orbit": "97.8 (degrees)",
+      "Obliquity to Orbit": 97.8,
       "Mean Temperature": "-195 (C)",
       "Surface Pressure": "Unknown (bars)",
       "Number of Moons": "27",
@@ -934,122 +1169,254 @@ const planetData = {
     },
 
     {
-      "Planet": "NEPTUNE",
+      "name": "NEPTUNE",
       "Mass": "102 (10^24kg)",
-      "Diameter": "49,528 (km)",
+      "Diameter": (49528),
       "Density": "1638 (kg/m3)",
       "Gravity": "11.0 (m/s2)",
-      "Escape Velocity": "23.5 (km/s)",
+      "Escape Velocity": 23.5,
       "Rotation Period": "16.1 (hours)",
       "Length of Day": "16.1 (hours)",
       "Distance from Sun": 4495.1,
       "Perihelion": "4444.5 (10^6 km)",
       "Aphelion": "4545.7 (10^6 km)",
-      "Orbital Period": "59,800 (days)",
+      "Orbital Period": "59800 (days)",
       "Orbital Velocity": "5.4 (km/s)",
       "Orbital Inclination": "1.8 (degrees)",
       "Orbital Eccentricity": "0.011",
-      "Obliquity to Orbit": "28.3 (degrees)",
+      "Obliquity to Orbit": 28.3,
       "Mean Temperature": "-200 (C)",
       "Surface Pressure": "Unknown (bars)",
       "Number of Moons": "14",
       "Ring System?": "Yes",
       "Global Magnetic Field?": "Yes"
     },
-
-    {
-      "Planet": "PLUTO",
-      "Mass": "0.0146 (10^24kg)",
-      "Diameter": "2370 (km)",
-      "Density": "2095 (kg/m3)",
-      "Gravity": "0.7 (m/s2)",
-      "Escape Velocity": "1.3 (km/s)",
-      "Rotation Period": "-153.3 (hours)",
-      "Length of Day": "153.3 (hours)",
-      "Distance from Sun": 5906.4,
-      "Perihelion": "4436.8 (10^6 km)",
-      "Aphelion": "7375.9 (10^6 km)",
-      "Orbital Period": "90,560 (days)",
-      "Orbital Velocity": "4.7 (km/s)",
-      "Orbital Inclination": "17.2 (degrees)",
-      "Orbital Eccentricity": "0.244",
-      "Obliquity to Orbit": "122.5 (degrees)",
-      "Mean Temperature": "-225 (C)",
-      "Surface Pressure": "1e-05 (bars)",
-      "Number of Moons": "5",
-      "Ring System?": "No",
-      "Global Magnetic Field?": "Unknown"
-    }
   ]
 };
 
-const data = new Map();
-planetData.data.forEach((value) => {
-  data.set(
-    value.Planet,
-    {
-      'name': value.Planet,
-      'distance': map(value['Distance from Sun'], 6000, -6000),
-      'diameter': value.Diameter
+const data = new Array();
+
+const texPaths = [
+  './res/2k_sun.jpg',
+  './res/2k_mercury.jpg',
+  './res/2k_venus_surface.jpg',
+  './res/2k_earth_daymap.jpg',
+  './res/2k_mars.jpg',
+  './res/2k_jupiter.jpg',
+  './res/2k_saturn.jpg',
+  './res/2k_uranus.jpg',
+  './res/2k_neptune.jpg'
+];
+
+{
+  for(let i = 0; i < solarData.data.length; i++) {
+    let value = solarData.data[i];
+    let isSun = false;
+    if(value.name === 'SUN') {
+      isSun = true;
     }
-  );
-});
-console.log(data.get('EARTH'));
+    data.push(
+      {
+        'name': value.name,
+        'distance': parseFloat(value['Distance from Sun']),
+        'radius': (parseFloat(value.Diameter) / 2) / (12756 / 2),
+        'axisTilt': parseFloat(value['Obliquity to Orbit']),
+        'orbPeriod': parseFloat(value['Orbital Period'].slice(0, -7)),
+        'rotPeriod':(parseFloat(value['Rotation Period'].slice(0, -8)) / 24),
+        'isSun': isSun,
+        'texturePath': texPaths[i],
+        'sphere': null, // Actual reference to the sphere
+        'orbit': null, // Actual reference to the orbit
+      }
+    );
+  }
+}
+
+class Camera {
+  position = fromValues(-1000, 0, 0);
+  target = fromValues(0, 0, 0);
+  up = fromValues(0, 1, 0);
+  matrix = create$1();
+  
+  constructor() {}
+
+  getVM() {
+    lookAt(
+      this.matrix,
+      this.position,
+      this.target,
+      this.up
+    );
+    rotateZ(
+      this.matrix,
+      this.matrix,
+      radians(23)
+    );
+    return this.matrix;
+  }
+}
+
+let cam = new Camera();
 
 const canvas = document.getElementById('canvas');
-const gl = canvas.getContext('webgl2');
+const gl = canvas.getContext('webgl2')
+ ?? canvas.getContext('experimental-webgl2');
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
 function mainLoop() {
-  let view = create$1();
-  lookAt(view, fromValues(0, 0, 0), fromValues(0, 0, 0), fromValues(0, 1, 0));
+  gl.canvas.addEventListener('touchmove', (e) => {
+    e.touches[0].clientX;
+    e.touches[0].clientY;
+    // alert(mouseX);
+  });
+  
+  data.forEach((value) => {
+    if(!value.isSun) {
+      value.distance += 109;
+      value.radius *= 1;
+    } else {
+      value.radius = 109;
+    }
+    value.sphere = new Sphere(
+      gl,
+      value.radius,
+      value.name,
+      value.texturePath
+    );
+    value.orbit = new Orbit(
+      gl,
+      value.distance,
+      value.name
+    );
+  });
 
-  let cube = new Cube(gl, 1.0);
+  let angleRot = 0;
+  let angleRotSelf = 0;
 
-  let shader = new Shader(
+  let sphereShader = new Shader(
     gl,
-    Cube.source.vertexSource,
-    Cube.source.fragmentSource
+    source$1.vertexSource,
+    source$1.fragmentSource
+  );
+  let orbitShader = new Shader(
+    gl,
+    source.vertexSource,
+    source.fragmentSource
   );
 
-  shader.disconnectShader();
-  let angle = 0.5;
-  let inc = 0.001;
+  sphereShader.disconnectShader();
+  orbitShader.disconnectShader();
+  
   let proj = create$1();
-  let model = create$1();
-  translate(model, model, [0, 0, -5]);
-  const render = () => {
+  
+  const render = (now) => {
     Renderer.clear(gl);
+    now *= 0.001;
 
-    perspective(proj, Math.PI / 2, gl.canvas.width / gl.canvas.height, 1, 2000);
-
-    shader.connectShader();
-    shader.setUniformMatrix4fv(
+    perspective(
+      proj,
+      PI / 4,
+      gl.canvas.width / gl.canvas.height,
+      1, 80000
+    );
+    let view = cam.getVM();
+    
+    sphereShader.connectShader();
+    sphereShader.setUniformMatrix4fv(
       gl,
       'u_proj',
       proj
     );
-    shader.setUniformMatrix4fv(
+    sphereShader.setUniformMatrix4fv(
       gl,
       'u_view',
       view
     );
-    shader.setUniformMatrix4fv(
-      gl,
-      'u_model',
-      model
-    );
-
-    angle += inc;
-    if (angle > 360 || angle < 0) inc = -inc;
-    angle -= inc;
-    rotateY(model, model, angle * Math.PI / 180);
-
-    cube.render(gl, shader);
-
+    
+    let modelSphere = create$1();
+    let modelOrbit = create$1();
+    
+    data.forEach((value) => {
+      if(!value.sphere) return;
+      identity(modelSphere);
+      identity(modelOrbit);
+      
+      if(!value.isSun) {
+        angleRot = (2 * PI * now / value.orbPeriod);
+        angleRotSelf = (2 * PI * now * value.rotPeriod);
+      } else {
+        angleRot = 0;
+        angleRotSelf = (2 * PI * now * value.rotPeriod);
+      }
+      translate(
+        modelSphere,
+        modelSphere,
+        fromValues(
+          value.distance *
+            cos(radians(value.axisTilt)) *
+            sin(angleRot),
+          value.distance *
+            sin(radians(value.axisTilt)) *
+            sin(angleRot),
+          value.distance * cos(angleRot),
+        )
+      );
+      
+      rotateX(
+        modelSphere,
+        modelSphere,
+        radians(value.axisTilt)
+      );
+      rotateY(
+        modelSphere,
+        modelSphere,
+        angleRotSelf
+      );
+      rotateX(modelSphere, modelSphere, radians(90));
+      
+      sphereShader.connectShader();
+      sphereShader.setUniformMatrix4fv(
+        gl,
+        'u_model',
+        modelSphere
+      );
+      sphereShader.setUniform1i(
+        gl,
+        'u_image',
+        0
+      );
+      value.sphere.render(gl, sphereShader);
+      
+      rotateZ(
+        modelOrbit,
+        modelOrbit,
+        radians(value.axisTilt)
+      );
+      
+      orbitShader.connectShader();
+      orbitShader.setUniformMatrix4fv(
+        gl,
+        'u_proj',
+        proj
+      );
+      orbitShader.setUniformMatrix4fv(
+        gl,
+        'u_view',
+        view
+      );
+      orbitShader.setUniformMatrix4fv(
+        gl,
+        'u_model',
+        modelOrbit
+      );
+      if(!value.isSun && value.orbit)
+        value.orbit.render(gl, orbitShader);
+    });
+    
     window.requestAnimationFrame(render);
   };
 
-  render();
+  window.requestAnimationFrame(render);
 }
 
 mainLoop();
