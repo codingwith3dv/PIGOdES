@@ -103,6 +103,17 @@ function Shader(
       matrix
     );
   }
+  
+  this.setUniform1i = (
+    gl,
+    name,
+    img
+  ) => {
+    gl.uniform1i(
+      getLocation(id, name),
+      img
+    );
+  }
 }
 
 export {

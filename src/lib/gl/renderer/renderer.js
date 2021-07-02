@@ -6,16 +6,24 @@ export default class Renderer {
     Renderer.resizeToDisplaySize(gl.canvas);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   }
-  static draw(gl, va, ib, shader) {
+  static draw(gl, va, ib, shader, type) {
     shader.connectShader();
     va.connectVertexArray();
     ib.connectIndexBuffer();
 
     gl.drawElements(
-      gl.TRIANGLES,
+      type,
       ib.getCount(),
       gl.UNSIGNED_SHORT,
       null
+    );
+  }
+  static drawArrays(gl, vao, type, count) {
+    vao.connectVertexArray();
+    gl.drawArrays(
+      type,
+      0,
+      count
     );
   }
 
