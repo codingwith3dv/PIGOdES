@@ -1857,33 +1857,33 @@ function Camera(
 
   let cameraUp              = fromValues$2(0, 1, 0);
   let mousePosition         = create$3();
-  
+
   let cameraPitch           = 0;
   let cameraHeading         = 0;
-  
+
   let isMoving              = false;
 
   let view                  = create$4();
-  
+
   this.update = () => {
     cameraDirection = normalize$2(sub(cameraLookAt, cameraPosition));
-    
+
     let axis = cross(cameraDirection, cameraUp);
     let pitchQuat = setAxisAngle(create(), axis, cameraPitch);
     let headingQuat = setAxisAngle(create(), cameraUp, cameraHeading);
-    
+
     let temp = add(create(),pitchQuat, headingQuat);
     normalize(temp, temp);
-    
+
     cameraDirection = rotateQuat(temp, cameraDirection);
     add$2(cameraPosition, cameraPosition, cameraPositionDelta);
     add$2(cameraLookAt, cameraPosition, cameraDirection);
-    
+
     cameraHeading *= 0.5;
     cameraPitch *= 0.5;
-    
+
     scale(cameraPositionDelta, cameraPositionDelta, 0.8);
-    
+
     lookAt(
       view,
       cameraPosition,
@@ -1891,19 +1891,19 @@ function Camera(
       cameraUp
     );
   };
-  
+
   let max = 3;
   this.changePitch = (deg) => {
     let degrees = Math.max(-max, Math.min(max, deg));
     cameraPitch += degrees;
-    
+
     if(cameraPitch >  360) cameraPitch -= 360;
     if(cameraPitch < -360) cameraPitch += 360;
   };
-  
+
   this.changeHeading = (deg) => {
     let degrees = Math.max(-max, Math.min(max, deg));
-    
+
     if(
       cameraPitch > 90 &&
       cameraPitch < 270 ||
@@ -1913,11 +1913,11 @@ function Camera(
     } else {
       cameraHeading += degrees;
     }
-    
+
     if (cameraHeading >  360) cameraHeading -= 360;
     if (cameraHeading < -360) cameraHeading += 360;
   };
-  
+
   let touchMove = (ev) => {
     let x_y_z = getXAndY(canvas, ev);
     let mouseDelta = sub(mousePosition, x_y_z);
@@ -1925,6 +1925,16 @@ function Camera(
     if(isMoving) {
       this.changeHeading(0.008 * mouseDelta[0]);
       this.changePitch(0.008 * mouseDelta[1]);
+    }
+    mousePosition = x_y_z;
+  };
+  let mouseMove = (ev) => {
+    let x_y_z = [ev.clientX, ev.clientY, 0];
+    let mouseDelta = sub(mousePosition, x_y_z);
+
+    if(isMoving) {
+      this.changeHeading(0.0008 * mouseDelta[0]);
+      this.changePitch(0.0008 * mouseDelta[1]);
     }
     mousePosition = x_y_z;
   };
@@ -1936,6 +1946,13 @@ function Camera(
       canvas.removeEventListener('touchcancel', touchEnd);
     }
   };
+  let mouseEnd = () => {
+    if(isMoving) {
+      isMoving = false;
+      canvas.removeEventListener('mousemove', touchMove);
+      canvas.removeEventListener('mouseend', touchEnd);
+    }
+  };
   let touchStart = (ev) => {
     mousePosition = getXAndY(canvas, ev);
     isMoving = true;
@@ -1943,8 +1960,16 @@ function Camera(
     canvas.addEventListener('touchend', touchEnd);
     canvas.addEventListener('touchcancel', touchEnd);
   };
+  let mouseDown = (ev) => {
+    mousePosition = [ev.clientX, ev.clientY, 0];
+    isMoving = true;
+    canvas.addEventListener('mousemove', mouseMove);
+    canvas.addEventListener('mouseup', mouseEnd);
+  };
+
   canvas.addEventListener('touchstart', touchStart);
-  
+  canvas.addEventListener('mousedown', mouseDown);
+
   this.getVM = () => {
     return view;
   };
