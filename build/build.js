@@ -169,9 +169,6 @@ class Renderer {
  * Common utilities
  * @module glMatrix
  */
-
-// Configuration Constants
-const EPSILON = 0.000001;
 let ARRAY_TYPE =
   typeof Float32Array !== "undefined" ? Float32Array : Array;
 
@@ -239,6 +236,73 @@ function identity(out) {
   out[13] = 0;
   out[14] = 0;
   out[15] = 1;
+  return out;
+}
+
+/**
+ * Inverts a mat4
+ *
+ * @param {mat4} out the receiving matrix
+ * @param {ReadonlyMat4} a the source matrix
+ * @returns {mat4} out
+ */
+function invert(out, a) {
+  let a00 = a[0],
+    a01 = a[1],
+    a02 = a[2],
+    a03 = a[3];
+  let a10 = a[4],
+    a11 = a[5],
+    a12 = a[6],
+    a13 = a[7];
+  let a20 = a[8],
+    a21 = a[9],
+    a22 = a[10],
+    a23 = a[11];
+  let a30 = a[12],
+    a31 = a[13],
+    a32 = a[14],
+    a33 = a[15];
+
+  let b00 = a00 * a11 - a01 * a10;
+  let b01 = a00 * a12 - a02 * a10;
+  let b02 = a00 * a13 - a03 * a10;
+  let b03 = a01 * a12 - a02 * a11;
+  let b04 = a01 * a13 - a03 * a11;
+  let b05 = a02 * a13 - a03 * a12;
+  let b06 = a20 * a31 - a21 * a30;
+  let b07 = a20 * a32 - a22 * a30;
+  let b08 = a20 * a33 - a23 * a30;
+  let b09 = a21 * a32 - a22 * a31;
+  let b10 = a21 * a33 - a23 * a31;
+  let b11 = a22 * a33 - a23 * a32;
+
+  // Calculate the determinant
+  let det =
+    b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
+
+  if (!det) {
+    return null;
+  }
+  det = 1.0 / det;
+
+  out[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
+  out[1] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
+  out[2] = (a31 * b05 - a32 * b04 + a33 * b03) * det;
+  out[3] = (a22 * b04 - a21 * b05 - a23 * b03) * det;
+  out[4] = (a12 * b08 - a10 * b11 - a13 * b07) * det;
+  out[5] = (a00 * b11 - a02 * b08 + a03 * b07) * det;
+  out[6] = (a32 * b02 - a30 * b05 - a33 * b01) * det;
+  out[7] = (a20 * b05 - a22 * b02 + a23 * b01) * det;
+  out[8] = (a10 * b10 - a11 * b08 + a13 * b06) * det;
+  out[9] = (a01 * b08 - a00 * b10 - a03 * b06) * det;
+  out[10] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
+  out[11] = (a21 * b02 - a20 * b04 - a23 * b00) * det;
+  out[12] = (a11 * b07 - a10 * b09 - a12 * b06) * det;
+  out[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
+  out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
+  out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
+
   return out;
 }
 
@@ -478,96 +542,6 @@ function perspectiveNO(out, fovy, aspect, near, far) {
 const perspective = perspectiveNO;
 
 /**
- * Generates a look-at matrix with the given eye position, focal point, and up axis.
- * If you want a matrix that actually makes an object look at another object, you should use targetTo instead.
- *
- * @param {mat4} out mat4 frustum matrix will be written into
- * @param {ReadonlyVec3} eye Position of the viewer
- * @param {ReadonlyVec3} center Point the viewer is looking at
- * @param {ReadonlyVec3} up vec3 pointing up
- * @returns {mat4} out
- */
-function lookAt(out, eye, center, up) {
-  let x0, x1, x2, y0, y1, y2, z0, z1, z2, len;
-  let eyex = eye[0];
-  let eyey = eye[1];
-  let eyez = eye[2];
-  let upx = up[0];
-  let upy = up[1];
-  let upz = up[2];
-  let centerx = center[0];
-  let centery = center[1];
-  let centerz = center[2];
-
-  if (
-    Math.abs(eyex - centerx) < EPSILON &&
-    Math.abs(eyey - centery) < EPSILON &&
-    Math.abs(eyez - centerz) < EPSILON
-  ) {
-    return identity(out);
-  }
-
-  z0 = eyex - centerx;
-  z1 = eyey - centery;
-  z2 = eyez - centerz;
-
-  len = 1 / Math.hypot(z0, z1, z2);
-  z0 *= len;
-  z1 *= len;
-  z2 *= len;
-
-  x0 = upy * z2 - upz * z1;
-  x1 = upz * z0 - upx * z2;
-  x2 = upx * z1 - upy * z0;
-  len = Math.hypot(x0, x1, x2);
-  if (!len) {
-    x0 = 0;
-    x1 = 0;
-    x2 = 0;
-  } else {
-    len = 1 / len;
-    x0 *= len;
-    x1 *= len;
-    x2 *= len;
-  }
-
-  y0 = z1 * x2 - z2 * x1;
-  y1 = z2 * x0 - z0 * x2;
-  y2 = z0 * x1 - z1 * x0;
-
-  len = Math.hypot(y0, y1, y2);
-  if (!len) {
-    y0 = 0;
-    y1 = 0;
-    y2 = 0;
-  } else {
-    len = 1 / len;
-    y0 *= len;
-    y1 *= len;
-    y2 *= len;
-  }
-
-  out[0] = x0;
-  out[1] = y0;
-  out[2] = z0;
-  out[3] = 0;
-  out[4] = x1;
-  out[5] = y1;
-  out[6] = z1;
-  out[7] = 0;
-  out[8] = x2;
-  out[9] = y2;
-  out[10] = z2;
-  out[11] = 0;
-  out[12] = -(x0 * eyex + x1 * eyey + x2 * eyez);
-  out[13] = -(y0 * eyex + y1 * eyey + y2 * eyez);
-  out[14] = -(z0 * eyex + z1 * eyey + z2 * eyez);
-  out[15] = 1;
-
-  return out;
-}
-
-/**
  * 3 Dimensional Vector
  * @module vec3
  */
@@ -600,6 +574,42 @@ function fromValues(x, y, z) {
   out[0] = x;
   out[1] = y;
   out[2] = z;
+  return out;
+}
+
+/**
+ * Adds two vec3's
+ *
+ * @param {vec3} out the receiving vector
+ * @param {ReadonlyVec3} a the first operand
+ * @param {ReadonlyVec3} b the second operand
+ * @returns {vec3} out
+ */
+function add(out, a, b) {
+  out[0] = a[0] + b[0];
+  out[1] = a[1] + b[1];
+  out[2] = a[2] + b[2];
+  return out;
+}
+
+/**
+ * Transforms the vec3 with a mat4.
+ * 4th vector component is implicitly '1'
+ *
+ * @param {vec3} out the receiving vector
+ * @param {ReadonlyVec3} a the vector to transform
+ * @param {ReadonlyMat4} m matrix to transform with
+ * @returns {vec3} out
+ */
+function transformMat4(out, a, m) {
+  let x = a[0],
+    y = a[1],
+    z = a[2];
+  let w = m[3] * x + m[7] * y + m[11] * z + m[15];
+  w = w || 1.0;
+  out[0] = (m[0] * x + m[4] * y + m[8] * z + m[12]) / w;
+  out[1] = (m[1] * x + m[5] * y + m[9] * z + m[13]) / w;
+  out[2] = (m[2] * x + m[6] * y + m[10] * z + m[14]) / w;
   return out;
 }
 
@@ -1232,44 +1242,280 @@ const texPaths = [
   }
 }
 
-class Camera {
-  position = fromValues(-1000, 0, 0);
-  target = fromValues(0, 0, 0);
-  up = fromValues(0, 1, 0);
-  matrix = create$1();
-  
-  constructor() {}
+/**
+ * A Flying Camera allows free motion around the scene using FPS style controls (WASD + mouselook)
+ * This type of camera is good for displaying large scenes
+ */
+var FlyingCamera = Object.create(Object, {
+  _angles: {
+    value: null
+  },
 
-  getVM() {
-    lookAt(
-      this.matrix,
-      this.position,
-      this.target,
-      this.up
-    );
-    rotateZ(
-      this.matrix,
-      this.matrix,
-      radians(23)
-    );
-    return this.matrix;
+  angles: {
+    get: function() {
+      return this._angles;
+    },
+    set: function(value) {
+      this._angles = value;
+      this._dirty = true;
+    }
+  },
+
+  _position: {
+    value: null
+  },
+
+  position: {
+    get: function() {
+      return this._position;
+    },
+    set: function(value) {
+      this._position = value;
+      this._dirty = true;
+    }
+  },
+
+  speed: {
+    value: 100
+  },
+
+  _dirty: {
+    value: true
+  },
+
+  _cameraMat: {
+    value: null
+  },
+
+  _pressedKeys: {
+    value: null
+  },
+
+  _viewMat: {
+    value: null
+  },
+
+  viewMat: {
+    get: function() {
+      if (this._dirty) {
+        var mv = this._viewMat;
+        identity(mv);
+        rotateX(mv, this.angles[0] - Math.PI / 2.0);
+        rotateZ(mv, this.angles[1]);
+        rotateY(mv, this.angles[2]);
+        translate(mv, [-this.position[0], -this.position[1], -this.position[2]]);
+        this._dirty = false;
+      }
+
+      return this._viewMat;
+    }
+  },
+
+  init: {
+    value: function(canvas) {
+      this.angles = create();
+      this.position = create();
+      this.pressedKeys = new Array(128);
+
+      // Initialize the matricies
+      this.projectionMat = create$1();
+      this._viewMat = create$1();
+      this._cameraMat = create$1();
+
+      // Set up the appropriate event hooks
+      var moving = false;
+      var lastX, lastY;
+      var self = this;
+
+      window.addEventListener("keydown", function(event) {
+        self.pressedKeys[event.keyCode] = true;
+      }, false);
+
+      window.addEventListener("keyup", function(event) {
+        self.pressedKeys[event.keyCode] = false;
+      }, false);
+
+      canvas.addEventListener('mousedown', function(event) {
+        if (event.which == 1) {
+          moving = true;
+        }
+        lastX = event.pageX;
+        lastY = event.pageY;
+      }, false);
+
+      canvas.addEventListener('mousemove', function(event) {
+        if (moving) {
+          var xDelta = event.pageX - lastX;
+          var yDelta = event.pageY - lastY;
+          lastX = event.pageX;
+          lastY = event.pageY;
+
+          self.angles[1] += xDelta * 0.025;
+          while (self.angles[1] < 0)
+            self.angles[1] += Math.PI * 2;
+          while (self.angles[1] >= Math.PI * 2)
+            self.angles[1] -= Math.PI * 2;
+
+          self.angles[0] += yDelta * 0.025;
+          while (self.angles[0] < -Math.PI * 0.5)
+            self.angles[0] = -Math.PI * 0.5;
+          while (self.angles[0] > Math.PI * 0.5)
+            self.angles[0] = Math.PI * 0.5;
+
+          self._dirty = true;
+        }
+      }, false);
+
+      canvas.addEventListener('mouseup', function(event) {
+        moving = false;
+      }, false);
+
+      return this;
+    }
+  },
+
+  update: {
+    value: function(frameTime) {
+      var dir = [0, 0, 0];
+
+      var speed = (this.speed / 1000) * frameTime;
+
+      // This is our first person movement code. It's not really pretty, but it works
+      if (this.pressedKeys['W'.charCodeAt(0)]) {
+        dir[1] += speed;
+      }
+      if (this.pressedKeys['S'.charCodeAt(0)]) {
+        dir[1] -= speed;
+      }
+      if (this.pressedKeys['A'.charCodeAt(0)]) {
+        dir[0] -= speed;
+      }
+      if (this.pressedKeys['D'.charCodeAt(0)]) {
+        dir[0] += speed;
+      }
+      if (this.pressedKeys[32]) { // Space, moves up
+        dir[2] += speed;
+      }
+      if (this.pressedKeys[17]) { // Ctrl, moves down
+        dir[2] -= speed;
+      }
+
+      if (dir[0] != 0 || dir[1] != 0 || dir[2] != 0) {
+        var cam = this._cameraMat;
+        identity(cam);
+        rotateX(cam, this.angles[0]);
+        rotateZ(cam, this.angles[1]);
+        invert(cam);
+
+        transformMat4(cam, cam, dir);
+
+        // Move the camera in the direction we are facing
+        add(this.position, dir);
+
+        this._dirty = true;
+      }
+    }
   }
-}
+});
 
-let cam = new Camera();
+// function Camera() {
+//   this.position = vec3.fromValues(-500, 0, 0);
+//   this.up = vec3.fromValues(0, 1, 0);
+//   this.forward = vec3.fromValues(0, 0, -1);
+//   this.matrix = mat4.create();
+
+//   this.lastX = 0;
+//   this.lastY = 0;
+//   this.yaw = -90;
+//   this.pitch = 0;
+//   this.firstTime = true;
+
+//   this.getVM = () => {
+//     mat4.lookAt(
+//       this.matrix,
+//       this.position,
+//       vec3.add(vec3.create(), this.position, this.forward),
+//       this.up
+//     );
+//     return this.matrix;
+//   }
+
+//   this.mouseMove = (ev) => {
+//     let rect = ev.currentTarget.getBoundingClientRect();
+//     let x = ev.touches[0].clientX - rect.top;
+//     let y = ev.touches[0].clientY - rect.left;
+
+//     if (this.firstTime) {
+//       this.lastX = x;
+//       this.lastY = y;
+//       this.firstTime = false;
+//     }
+
+//     let deltaX = x - this.lastX;
+//     let deltaY = this.lastY - y;
+
+//     this.lastX = x;
+//     this.lastY = y;
+
+//     this.yaw += deltaX * 0.1;
+//     this.pitch += deltaY * 0.1;
+
+//     if (!this.firstTime) {
+//       if (this.pitch > 89.0)
+//         this.pitch = 89.0;
+//       if (this.pitch < -89.0)
+//         this.pitch = -89.0;
+//     }
+//     this.updateCamera();
+//   }
+//   this.updateCamera = () => {
+//     let newForward = vec3.create();
+//     newForward[0] = util.cos(
+//         util.radians(this.yaw)) *
+//       util.cos(util.radians(this.pitch));
+//     newForward[1] = util.sin(
+//       util.radians(this.pitch)
+//     );
+//     newForward[2] = util.sin(
+//         util.radians(this.yaw)) *
+//       util.cos(util.radians(this.pitch));
+//     this.forward = vec3.normalize(vec3.create(), newForward);
+
+//     let right = vec3.normalize(
+//       vec3.create(),
+//       vec3.cross(
+//         vec3.create(),
+//         this.forward,
+//         this.up
+//       )
+//     );
+
+//     this.up = vec3.normalize(
+//       vec3.create(),
+//       vec3.cross(
+//         vec3.create(),
+//         right,
+//         this.forward
+//       )
+//     );
+//   }
+//   this.updateCamera();
+// }
+
+// export {
+//   Camera as
+//   default
+// };
 
 const canvas = document.getElementById('canvas');
 const gl = canvas.getContext('webgl2')
  ?? canvas.getContext('experimental-webgl2');
 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+const cam = Object.create(FlyingCamera).init(canvas);
 
 function mainLoop() {
-  gl.canvas.addEventListener('touchmove', (e) => {
-    e.touches[0].clientX;
-    e.touches[0].clientY;
-    // alert(mouseX);
-  });
-  
+  canvas.addEventListener('touchmove', cam.mouseMove);
+
   data.forEach((value) => {
     if(!value.isSun) {
       value.distance += 109;
@@ -1306,12 +1552,13 @@ function mainLoop() {
 
   sphereShader.disconnectShader();
   orbitShader.disconnectShader();
-  
+
   let proj = create$1();
-  
+
   const render = (now) => {
     Renderer.clear(gl);
     now *= 0.001;
+    cam.update(16);
 
     perspective(
       proj,
@@ -1319,8 +1566,8 @@ function mainLoop() {
       gl.canvas.width / gl.canvas.height,
       1, 80000
     );
-    let view = cam.getVM();
-    
+    let view = cam.viewMat;
+
     sphereShader.connectShader();
     sphereShader.setUniformMatrix4fv(
       gl,
@@ -1332,15 +1579,15 @@ function mainLoop() {
       'u_view',
       view
     );
-    
+
     let modelSphere = create$1();
     let modelOrbit = create$1();
-    
+
     data.forEach((value) => {
       if(!value.sphere) return;
       identity(modelSphere);
       identity(modelOrbit);
-      
+
       if(!value.isSun) {
         angleRot = (2 * PI * now / value.orbPeriod);
         angleRotSelf = (2 * PI * now * value.rotPeriod);
@@ -1361,7 +1608,7 @@ function mainLoop() {
           value.distance * cos(angleRot),
         )
       );
-      
+
       rotateX(
         modelSphere,
         modelSphere,
@@ -1373,7 +1620,7 @@ function mainLoop() {
         angleRotSelf
       );
       rotateX(modelSphere, modelSphere, radians(90));
-      
+
       sphereShader.connectShader();
       sphereShader.setUniformMatrix4fv(
         gl,
@@ -1386,13 +1633,13 @@ function mainLoop() {
         0
       );
       value.sphere.render(gl, sphereShader);
-      
+
       rotateZ(
         modelOrbit,
         modelOrbit,
         radians(value.axisTilt)
       );
-      
+
       orbitShader.connectShader();
       orbitShader.setUniformMatrix4fv(
         gl,
@@ -1412,7 +1659,7 @@ function mainLoop() {
       if(!value.isSun && value.orbit)
         value.orbit.render(gl, orbitShader);
     });
-    
+
     window.requestAnimationFrame(render);
   };
 

@@ -9,16 +9,15 @@ import * as util from './lib/utils/utils.js';
 import Camera from './lib/gl/camera/camera.js';
 
 const canvas = document.getElementById('canvas');
+
+/** @type {WebGL2RenderingContext} */
 const gl = canvas.getContext('webgl2')
  ?? canvas.getContext('experimental-webgl2');
 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-const cam = new Camera();
+
+const cam = new Camera(canvas);
 
 function mainLoop() {
-  canvas.addEventListener('touchmove', cam.mouseMove);
-  canvas.addEventListener('touchdown', cam.mouseDown);
-  canvas.addEventListener('touchup', cam.mouseUp);
-
   data.forEach((value) => {
     if(!value.isSun) {
       value.distance += 109;
@@ -69,6 +68,7 @@ function mainLoop() {
       gl.canvas.width / gl.canvas.height,
       1, 80000
     );
+    cam.update();
     let view = cam.getVM();
 
     sphereShader.connectShader();
