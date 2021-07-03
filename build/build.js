@@ -169,6 +169,9 @@ class Renderer {
  * Common utilities
  * @module glMatrix
  */
+
+// Configuration Constants
+const EPSILON = 0.000001;
 let ARRAY_TYPE =
   typeof Float32Array !== "undefined" ? Float32Array : Array;
 
@@ -190,7 +193,7 @@ if (!Math.hypot)
  *
  * @returns {mat4} a new 4x4 matrix
  */
-function create$1() {
+function create$4() {
   let out = new ARRAY_TYPE(16);
   if (ARRAY_TYPE != Float32Array) {
     out[1] = 0;
@@ -236,73 +239,6 @@ function identity(out) {
   out[13] = 0;
   out[14] = 0;
   out[15] = 1;
-  return out;
-}
-
-/**
- * Inverts a mat4
- *
- * @param {mat4} out the receiving matrix
- * @param {ReadonlyMat4} a the source matrix
- * @returns {mat4} out
- */
-function invert(out, a) {
-  let a00 = a[0],
-    a01 = a[1],
-    a02 = a[2],
-    a03 = a[3];
-  let a10 = a[4],
-    a11 = a[5],
-    a12 = a[6],
-    a13 = a[7];
-  let a20 = a[8],
-    a21 = a[9],
-    a22 = a[10],
-    a23 = a[11];
-  let a30 = a[12],
-    a31 = a[13],
-    a32 = a[14],
-    a33 = a[15];
-
-  let b00 = a00 * a11 - a01 * a10;
-  let b01 = a00 * a12 - a02 * a10;
-  let b02 = a00 * a13 - a03 * a10;
-  let b03 = a01 * a12 - a02 * a11;
-  let b04 = a01 * a13 - a03 * a11;
-  let b05 = a02 * a13 - a03 * a12;
-  let b06 = a20 * a31 - a21 * a30;
-  let b07 = a20 * a32 - a22 * a30;
-  let b08 = a20 * a33 - a23 * a30;
-  let b09 = a21 * a32 - a22 * a31;
-  let b10 = a21 * a33 - a23 * a31;
-  let b11 = a22 * a33 - a23 * a32;
-
-  // Calculate the determinant
-  let det =
-    b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-
-  if (!det) {
-    return null;
-  }
-  det = 1.0 / det;
-
-  out[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
-  out[1] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
-  out[2] = (a31 * b05 - a32 * b04 + a33 * b03) * det;
-  out[3] = (a22 * b04 - a21 * b05 - a23 * b03) * det;
-  out[4] = (a12 * b08 - a10 * b11 - a13 * b07) * det;
-  out[5] = (a00 * b11 - a02 * b08 + a03 * b07) * det;
-  out[6] = (a32 * b02 - a30 * b05 - a33 * b01) * det;
-  out[7] = (a20 * b05 - a22 * b02 + a23 * b01) * det;
-  out[8] = (a10 * b10 - a11 * b08 + a13 * b06) * det;
-  out[9] = (a01 * b08 - a00 * b10 - a03 * b06) * det;
-  out[10] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
-  out[11] = (a21 * b02 - a20 * b04 - a23 * b00) * det;
-  out[12] = (a11 * b07 - a10 * b09 - a12 * b06) * det;
-  out[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
-  out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
-  out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
-
   return out;
 }
 
@@ -542,6 +478,96 @@ function perspectiveNO(out, fovy, aspect, near, far) {
 const perspective = perspectiveNO;
 
 /**
+ * Generates a look-at matrix with the given eye position, focal point, and up axis.
+ * If you want a matrix that actually makes an object look at another object, you should use targetTo instead.
+ *
+ * @param {mat4} out mat4 frustum matrix will be written into
+ * @param {ReadonlyVec3} eye Position of the viewer
+ * @param {ReadonlyVec3} center Point the viewer is looking at
+ * @param {ReadonlyVec3} up vec3 pointing up
+ * @returns {mat4} out
+ */
+function lookAt(out, eye, center, up) {
+  let x0, x1, x2, y0, y1, y2, z0, z1, z2, len;
+  let eyex = eye[0];
+  let eyey = eye[1];
+  let eyez = eye[2];
+  let upx = up[0];
+  let upy = up[1];
+  let upz = up[2];
+  let centerx = center[0];
+  let centery = center[1];
+  let centerz = center[2];
+
+  if (
+    Math.abs(eyex - centerx) < EPSILON &&
+    Math.abs(eyey - centery) < EPSILON &&
+    Math.abs(eyez - centerz) < EPSILON
+  ) {
+    return identity(out);
+  }
+
+  z0 = eyex - centerx;
+  z1 = eyey - centery;
+  z2 = eyez - centerz;
+
+  len = 1 / Math.hypot(z0, z1, z2);
+  z0 *= len;
+  z1 *= len;
+  z2 *= len;
+
+  x0 = upy * z2 - upz * z1;
+  x1 = upz * z0 - upx * z2;
+  x2 = upx * z1 - upy * z0;
+  len = Math.hypot(x0, x1, x2);
+  if (!len) {
+    x0 = 0;
+    x1 = 0;
+    x2 = 0;
+  } else {
+    len = 1 / len;
+    x0 *= len;
+    x1 *= len;
+    x2 *= len;
+  }
+
+  y0 = z1 * x2 - z2 * x1;
+  y1 = z2 * x0 - z0 * x2;
+  y2 = z0 * x1 - z1 * x0;
+
+  len = Math.hypot(y0, y1, y2);
+  if (!len) {
+    y0 = 0;
+    y1 = 0;
+    y2 = 0;
+  } else {
+    len = 1 / len;
+    y0 *= len;
+    y1 *= len;
+    y2 *= len;
+  }
+
+  out[0] = x0;
+  out[1] = y0;
+  out[2] = z0;
+  out[3] = 0;
+  out[4] = x1;
+  out[5] = y1;
+  out[6] = z1;
+  out[7] = 0;
+  out[8] = x2;
+  out[9] = y2;
+  out[10] = z2;
+  out[11] = 0;
+  out[12] = -(x0 * eyex + x1 * eyey + x2 * eyez);
+  out[13] = -(y0 * eyex + y1 * eyey + y2 * eyez);
+  out[14] = -(z0 * eyex + z1 * eyey + z2 * eyez);
+  out[15] = 1;
+
+  return out;
+}
+
+/**
  * 3 Dimensional Vector
  * @module vec3
  */
@@ -551,7 +577,7 @@ const perspective = perspectiveNO;
  *
  * @returns {vec3} a new 3D vector
  */
-function create() {
+function create$3() {
   let out = new ARRAY_TYPE(3);
   if (ARRAY_TYPE != Float32Array) {
     out[0] = 0;
@@ -562,6 +588,19 @@ function create() {
 }
 
 /**
+ * Calculates the length of a vec3
+ *
+ * @param {ReadonlyVec3} a vector to calculate length of
+ * @returns {Number} length of a
+ */
+function length(a) {
+  let x = a[0];
+  let y = a[1];
+  let z = a[2];
+  return Math.hypot(x, y, z);
+}
+
+/**
  * Creates a new vec3 initialized with the given values
  *
  * @param {Number} x X component
@@ -569,7 +608,7 @@ function create() {
  * @param {Number} z Z component
  * @returns {vec3} a new 3D vector
  */
-function fromValues(x, y, z) {
+function fromValues$2(x, y, z) {
   let out = new ARRAY_TYPE(3);
   out[0] = x;
   out[1] = y;
@@ -585,7 +624,7 @@ function fromValues(x, y, z) {
  * @param {ReadonlyVec3} b the second operand
  * @returns {vec3} out
  */
-function add(out, a, b) {
+function add$2(out, a, b) {
   out[0] = a[0] + b[0];
   out[1] = a[1] + b[1];
   out[2] = a[2] + b[2];
@@ -593,25 +632,80 @@ function add(out, a, b) {
 }
 
 /**
- * Transforms the vec3 with a mat4.
- * 4th vector component is implicitly '1'
+ * Scales a vec3 by a scalar number
  *
  * @param {vec3} out the receiving vector
- * @param {ReadonlyVec3} a the vector to transform
- * @param {ReadonlyMat4} m matrix to transform with
+ * @param {ReadonlyVec3} a the vector to scale
+ * @param {Number} b amount to scale the vector by
  * @returns {vec3} out
  */
-function transformMat4(out, a, m) {
-  let x = a[0],
-    y = a[1],
-    z = a[2];
-  let w = m[3] * x + m[7] * y + m[11] * z + m[15];
-  w = w || 1.0;
-  out[0] = (m[0] * x + m[4] * y + m[8] * z + m[12]) / w;
-  out[1] = (m[1] * x + m[5] * y + m[9] * z + m[13]) / w;
-  out[2] = (m[2] * x + m[6] * y + m[10] * z + m[14]) / w;
+function scale(out, a, b) {
+  out[0] = a[0] * b;
+  out[1] = a[1] * b;
+  out[2] = a[2] * b;
   return out;
 }
+
+/**
+ * Normalize a vec3
+ *
+ * @param {vec3} out the receiving vector
+ * @param {ReadonlyVec3} a vector to normalize
+ * @returns {vec3} out
+ */
+function normalize$3(out, a) {
+  let x = a[0];
+  let y = a[1];
+  let z = a[2];
+  let len = x * x + y * y + z * z;
+  if (len > 0) {
+    //TODO: evaluate use of glm_invsqrt here?
+    len = 1 / Math.sqrt(len);
+  }
+  out[0] = a[0] * len;
+  out[1] = a[1] * len;
+  out[2] = a[2] * len;
+  return out;
+}
+
+/**
+ * Calculates the dot product of two vec3's
+ *
+ * @param {ReadonlyVec3} a the first operand
+ * @param {ReadonlyVec3} b the second operand
+ * @returns {Number} dot product of a and b
+ */
+function dot(a, b) {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+/**
+ * Computes the cross product of two vec3's
+ *
+ * @param {vec3} out the receiving vector
+ * @param {ReadonlyVec3} a the first operand
+ * @param {ReadonlyVec3} b the second operand
+ * @returns {vec3} out
+ */
+function cross$1(out, a, b) {
+  let ax = a[0],
+    ay = a[1],
+    az = a[2];
+  let bx = b[0],
+    by = b[1],
+    bz = b[2];
+
+  out[0] = ay * bz - az * by;
+  out[1] = az * bx - ax * bz;
+  out[2] = ax * by - ay * bx;
+  return out;
+}
+
+/**
+ * Alias for {@link vec3.length}
+ * @function
+ */
+const len = length;
 
 /**
  * Perform some operation over an array of vec3s.
@@ -626,7 +720,7 @@ function transformMat4(out, a, m) {
  * @function
  */
 ((function () {
-  let vec = create();
+  let vec = create$3();
 
   return function (a, stride, offset, count, fn, arg) {
     let i, l;
@@ -771,6 +865,41 @@ let cos = Math.cos;
 let sin = Math.sin;
 let PI = Math.PI;
 let radians = (d) => d * PI / 180;
+let normalize$2 = (a) => {
+  let x = a[0];
+  let y = a[1];
+  let z = a[2];
+  let len = x * x + y * y + z * z;
+  if (len > 0) {
+    len = 1 / Math.sqrt(len);
+  }
+  return [
+    a[0] * len,
+    a[1] * len,
+    a[2] * len
+  ]
+};
+let sub = (a, b) => {
+  return [
+    a[0] - b[0],
+    a[1] - b[1],
+    a[2] - b[2]
+  ];
+};
+let cross = (a, b) => {
+  let ax = a[0],
+    ay = a[1],
+    az = a[2];
+  let bx = b[0],
+    by = b[1],
+    bz = b[2];
+  
+  return [
+    ay * bz - az * by,
+    az * bx - ax * bz,
+    ax * by - ay * bx
+  ];
+};
 
 function Texture(
   gl,
@@ -852,7 +981,7 @@ class Sphere {
   radius = 0;
   name = '';
   stackCount = 100;
-  sectorCount = 100;
+  sectorCount = this.stackCount;
   texture = null;
   constructor(gl, _radius, _name, path) {
     this.radius = _radius;
@@ -1243,279 +1372,594 @@ const texPaths = [
 }
 
 /**
- * A Flying Camera allows free motion around the scene using FPS style controls (WASD + mouselook)
- * This type of camera is good for displaying large scenes
+ * 3x3 Matrix
+ * @module mat3
  */
-var FlyingCamera = Object.create(Object, {
-  _angles: {
-    value: null
-  },
 
-  angles: {
-    get: function() {
-      return this._angles;
-    },
-    set: function(value) {
-      this._angles = value;
-      this._dirty = true;
-    }
-  },
-
-  _position: {
-    value: null
-  },
-
-  position: {
-    get: function() {
-      return this._position;
-    },
-    set: function(value) {
-      this._position = value;
-      this._dirty = true;
-    }
-  },
-
-  speed: {
-    value: 100
-  },
-
-  _dirty: {
-    value: true
-  },
-
-  _cameraMat: {
-    value: null
-  },
-
-  _pressedKeys: {
-    value: null
-  },
-
-  _viewMat: {
-    value: null
-  },
-
-  viewMat: {
-    get: function() {
-      if (this._dirty) {
-        var mv = this._viewMat;
-        identity(mv);
-        rotateX(mv, this.angles[0] - Math.PI / 2.0);
-        rotateZ(mv, this.angles[1]);
-        rotateY(mv, this.angles[2]);
-        translate(mv, [-this.position[0], -this.position[1], -this.position[2]]);
-        this._dirty = false;
-      }
-
-      return this._viewMat;
-    }
-  },
-
-  init: {
-    value: function(canvas) {
-      this.angles = create();
-      this.position = create();
-      this.pressedKeys = new Array(128);
-
-      // Initialize the matricies
-      this.projectionMat = create$1();
-      this._viewMat = create$1();
-      this._cameraMat = create$1();
-
-      // Set up the appropriate event hooks
-      var moving = false;
-      var lastX, lastY;
-      var self = this;
-
-      window.addEventListener("keydown", function(event) {
-        self.pressedKeys[event.keyCode] = true;
-      }, false);
-
-      window.addEventListener("keyup", function(event) {
-        self.pressedKeys[event.keyCode] = false;
-      }, false);
-
-      canvas.addEventListener('mousedown', function(event) {
-        if (event.which == 1) {
-          moving = true;
-        }
-        lastX = event.pageX;
-        lastY = event.pageY;
-      }, false);
-
-      canvas.addEventListener('mousemove', function(event) {
-        if (moving) {
-          var xDelta = event.pageX - lastX;
-          var yDelta = event.pageY - lastY;
-          lastX = event.pageX;
-          lastY = event.pageY;
-
-          self.angles[1] += xDelta * 0.025;
-          while (self.angles[1] < 0)
-            self.angles[1] += Math.PI * 2;
-          while (self.angles[1] >= Math.PI * 2)
-            self.angles[1] -= Math.PI * 2;
-
-          self.angles[0] += yDelta * 0.025;
-          while (self.angles[0] < -Math.PI * 0.5)
-            self.angles[0] = -Math.PI * 0.5;
-          while (self.angles[0] > Math.PI * 0.5)
-            self.angles[0] = Math.PI * 0.5;
-
-          self._dirty = true;
-        }
-      }, false);
-
-      canvas.addEventListener('mouseup', function(event) {
-        moving = false;
-      }, false);
-
-      return this;
-    }
-  },
-
-  update: {
-    value: function(frameTime) {
-      var dir = [0, 0, 0];
-
-      var speed = (this.speed / 1000) * frameTime;
-
-      // This is our first person movement code. It's not really pretty, but it works
-      if (this.pressedKeys['W'.charCodeAt(0)]) {
-        dir[1] += speed;
-      }
-      if (this.pressedKeys['S'.charCodeAt(0)]) {
-        dir[1] -= speed;
-      }
-      if (this.pressedKeys['A'.charCodeAt(0)]) {
-        dir[0] -= speed;
-      }
-      if (this.pressedKeys['D'.charCodeAt(0)]) {
-        dir[0] += speed;
-      }
-      if (this.pressedKeys[32]) { // Space, moves up
-        dir[2] += speed;
-      }
-      if (this.pressedKeys[17]) { // Ctrl, moves down
-        dir[2] -= speed;
-      }
-
-      if (dir[0] != 0 || dir[1] != 0 || dir[2] != 0) {
-        var cam = this._cameraMat;
-        identity(cam);
-        rotateX(cam, this.angles[0]);
-        rotateZ(cam, this.angles[1]);
-        invert(cam);
-
-        transformMat4(cam, cam, dir);
-
-        // Move the camera in the direction we are facing
-        add(this.position, dir);
-
-        this._dirty = true;
-      }
-    }
+/**
+ * Creates a new identity mat3
+ *
+ * @returns {mat3} a new 3x3 matrix
+ */
+function create$2() {
+  let out = new ARRAY_TYPE(9);
+  if (ARRAY_TYPE != Float32Array) {
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+    out[5] = 0;
+    out[6] = 0;
+    out[7] = 0;
   }
-});
+  out[0] = 1;
+  out[4] = 1;
+  out[8] = 1;
+  return out;
+}
 
-// function Camera() {
-//   this.position = vec3.fromValues(-500, 0, 0);
-//   this.up = vec3.fromValues(0, 1, 0);
-//   this.forward = vec3.fromValues(0, 0, -1);
-//   this.matrix = mat4.create();
+/**
+ * 4 Dimensional Vector
+ * @module vec4
+ */
 
-//   this.lastX = 0;
-//   this.lastY = 0;
-//   this.yaw = -90;
-//   this.pitch = 0;
-//   this.firstTime = true;
+/**
+ * Creates a new, empty vec4
+ *
+ * @returns {vec4} a new 4D vector
+ */
+function create$1() {
+  let out = new ARRAY_TYPE(4);
+  if (ARRAY_TYPE != Float32Array) {
+    out[0] = 0;
+    out[1] = 0;
+    out[2] = 0;
+    out[3] = 0;
+  }
+  return out;
+}
 
-//   this.getVM = () => {
-//     mat4.lookAt(
-//       this.matrix,
-//       this.position,
-//       vec3.add(vec3.create(), this.position, this.forward),
-//       this.up
-//     );
-//     return this.matrix;
-//   }
+/**
+ * Creates a new vec4 initialized with the given values
+ *
+ * @param {Number} x X component
+ * @param {Number} y Y component
+ * @param {Number} z Z component
+ * @param {Number} w W component
+ * @returns {vec4} a new 4D vector
+ */
+function fromValues$1(x, y, z, w) {
+  let out = new ARRAY_TYPE(4);
+  out[0] = x;
+  out[1] = y;
+  out[2] = z;
+  out[3] = w;
+  return out;
+}
 
-//   this.mouseMove = (ev) => {
-//     let rect = ev.currentTarget.getBoundingClientRect();
-//     let x = ev.touches[0].clientX - rect.top;
-//     let y = ev.touches[0].clientY - rect.left;
+/**
+ * Adds two vec4's
+ *
+ * @param {vec4} out the receiving vector
+ * @param {ReadonlyVec4} a the first operand
+ * @param {ReadonlyVec4} b the second operand
+ * @returns {vec4} out
+ */
+function add$1(out, a, b) {
+  out[0] = a[0] + b[0];
+  out[1] = a[1] + b[1];
+  out[2] = a[2] + b[2];
+  out[3] = a[3] + b[3];
+  return out;
+}
 
-//     if (this.firstTime) {
-//       this.lastX = x;
-//       this.lastY = y;
-//       this.firstTime = false;
-//     }
+/**
+ * Normalize a vec4
+ *
+ * @param {vec4} out the receiving vector
+ * @param {ReadonlyVec4} a vector to normalize
+ * @returns {vec4} out
+ */
+function normalize$1(out, a) {
+  let x = a[0];
+  let y = a[1];
+  let z = a[2];
+  let w = a[3];
+  let len = x * x + y * y + z * z + w * w;
+  if (len > 0) {
+    len = 1 / Math.sqrt(len);
+  }
+  out[0] = x * len;
+  out[1] = y * len;
+  out[2] = z * len;
+  out[3] = w * len;
+  return out;
+}
 
-//     let deltaX = x - this.lastX;
-//     let deltaY = this.lastY - y;
+/**
+ * Perform some operation over an array of vec4s.
+ *
+ * @param {Array} a the array of vectors to iterate over
+ * @param {Number} stride Number of elements between the start of each vec4. If 0 assumes tightly packed
+ * @param {Number} offset Number of elements to skip at the beginning of the array
+ * @param {Number} count Number of vec4s to iterate over. If 0 iterates over entire array
+ * @param {Function} fn Function to call for each vector in the array
+ * @param {Object} [arg] additional argument to pass to fn
+ * @returns {Array} a
+ * @function
+ */
+((function() {
+  let vec = create$1();
 
-//     this.lastX = x;
-//     this.lastY = y;
+  return function(a, stride, offset, count, fn, arg) {
+    let i, l;
+    if (!stride) {
+      stride = 4;
+    }
 
-//     this.yaw += deltaX * 0.1;
-//     this.pitch += deltaY * 0.1;
+    if (!offset) {
+      offset = 0;
+    }
 
-//     if (!this.firstTime) {
-//       if (this.pitch > 89.0)
-//         this.pitch = 89.0;
-//       if (this.pitch < -89.0)
-//         this.pitch = -89.0;
-//     }
-//     this.updateCamera();
-//   }
-//   this.updateCamera = () => {
-//     let newForward = vec3.create();
-//     newForward[0] = util.cos(
-//         util.radians(this.yaw)) *
-//       util.cos(util.radians(this.pitch));
-//     newForward[1] = util.sin(
-//       util.radians(this.pitch)
-//     );
-//     newForward[2] = util.sin(
-//         util.radians(this.yaw)) *
-//       util.cos(util.radians(this.pitch));
-//     this.forward = vec3.normalize(vec3.create(), newForward);
+    if (count) {
+      l = Math.min(count * stride + offset, a.length);
+    } else {
+      l = a.length;
+    }
 
-//     let right = vec3.normalize(
-//       vec3.create(),
-//       vec3.cross(
-//         vec3.create(),
-//         this.forward,
-//         this.up
-//       )
-//     );
+    for (i = offset; i < l; i += stride) {
+      vec[0] = a[i];
+      vec[1] = a[i + 1];
+      vec[2] = a[i + 2];
+      vec[3] = a[i + 3];
+      fn(vec, vec, arg);
+      a[i] = vec[0];
+      a[i + 1] = vec[1];
+      a[i + 2] = vec[2];
+      a[i + 3] = vec[3];
+    }
 
-//     this.up = vec3.normalize(
-//       vec3.create(),
-//       vec3.cross(
-//         vec3.create(),
-//         right,
-//         this.forward
-//       )
-//     );
-//   }
-//   this.updateCamera();
-// }
+    return a;
+  };
+}))();
 
-// export {
-//   Camera as
-//   default
-// };
+/**
+ * Quaternion in the format XYZW
+ * @module quat
+ */
+
+/**
+ * Creates a new identity quat
+ *
+ * @returns {quat} a new quaternion
+ */
+function create() {
+  let out = new ARRAY_TYPE(4);
+  if (ARRAY_TYPE != Float32Array) {
+    out[0] = 0;
+    out[1] = 0;
+    out[2] = 0;
+  }
+  out[3] = 1;
+  return out;
+}
+
+/**
+ * Sets a quat from the given angle and rotation axis,
+ * then returns it.
+ *
+ * @param {quat} out the receiving quaternion
+ * @param {ReadonlyVec3} axis the axis around which to rotate
+ * @param {Number} rad the angle in radians
+ * @returns {quat} out
+ **/
+function setAxisAngle(out, axis, rad) {
+  rad = rad * 0.5;
+  let s = Math.sin(rad);
+  out[0] = s * axis[0];
+  out[1] = s * axis[1];
+  out[2] = s * axis[2];
+  out[3] = Math.cos(rad);
+  return out;
+}
+
+/**
+ * Multiplies two quat's
+ *
+ * @param {quat} out the receiving quaternion
+ * @param {ReadonlyQuat} a the first operand
+ * @param {ReadonlyQuat} b the second operand
+ * @returns {quat} out
+ */
+function multiply(out, a, b) {
+  let ax = a[0],
+    ay = a[1],
+    az = a[2],
+    aw = a[3];
+  let bx = b[0],
+    by = b[1],
+    bz = b[2],
+    bw = b[3];
+
+  out[0] = ax * bw + aw * bx + ay * bz - az * by;
+  out[1] = ay * bw + aw * by + az * bx - ax * bz;
+  out[2] = az * bw + aw * bz + ax * by - ay * bx;
+  out[3] = aw * bw - ax * bx - ay * by - az * bz;
+  return out;
+}
+
+/**
+ * Performs a spherical linear interpolation between two quat
+ *
+ * @param {quat} out the receiving quaternion
+ * @param {ReadonlyQuat} a the first operand
+ * @param {ReadonlyQuat} b the second operand
+ * @param {Number} t interpolation amount, in the range [0-1], between the two inputs
+ * @returns {quat} out
+ */
+function slerp(out, a, b, t) {
+  // benchmarks:
+  //    http://jsperf.com/quaternion-slerp-implementations
+  let ax = a[0],
+    ay = a[1],
+    az = a[2],
+    aw = a[3];
+  let bx = b[0],
+    by = b[1],
+    bz = b[2],
+    bw = b[3];
+
+  let omega, cosom, sinom, scale0, scale1;
+
+  // calc cosine
+  cosom = ax * bx + ay * by + az * bz + aw * bw;
+  // adjust signs (if necessary)
+  if (cosom < 0.0) {
+    cosom = -cosom;
+    bx = -bx;
+    by = -by;
+    bz = -bz;
+    bw = -bw;
+  }
+  // calculate coefficients
+  if (1.0 - cosom > EPSILON) {
+    // standard case (slerp)
+    omega = Math.acos(cosom);
+    sinom = Math.sin(omega);
+    scale0 = Math.sin((1.0 - t) * omega) / sinom;
+    scale1 = Math.sin(t * omega) / sinom;
+  } else {
+    // "from" and "to" quaternions are very close
+    //  ... so we can do a linear interpolation
+    scale0 = 1.0 - t;
+    scale1 = t;
+  }
+  // calculate final values
+  out[0] = scale0 * ax + scale1 * bx;
+  out[1] = scale0 * ay + scale1 * by;
+  out[2] = scale0 * az + scale1 * bz;
+  out[3] = scale0 * aw + scale1 * bw;
+
+  return out;
+}
+
+/**
+ * Calculates the conjugate of a quat
+ * If the quaternion is normalized, this function is faster than quat.inverse and produces the same result.
+ *
+ * @param {quat} out the receiving quaternion
+ * @param {ReadonlyQuat} a quat to calculate conjugate of
+ * @returns {quat} out
+ */
+function conjugate(out, a) {
+  out[0] = -a[0];
+  out[1] = -a[1];
+  out[2] = -a[2];
+  out[3] = a[3];
+  return out;
+}
+
+/**
+ * Creates a quaternion from the given 3x3 rotation matrix.
+ *
+ * NOTE: The resultant quaternion is not normalized, so you should be sure
+ * to renormalize the quaternion yourself where necessary.
+ *
+ * @param {quat} out the receiving quaternion
+ * @param {ReadonlyMat3} m rotation matrix
+ * @returns {quat} out
+ * @function
+ */
+function fromMat3(out, m) {
+  // Algorithm in Ken Shoemake's article in 1987 SIGGRAPH course notes
+  // article "Quaternion Calculus and Fast Animation".
+  let fTrace = m[0] + m[4] + m[8];
+  let fRoot;
+
+  if (fTrace > 0.0) {
+    // |w| > 1/2, may as well choose w > 1/2
+    fRoot = Math.sqrt(fTrace + 1.0); // 2w
+    out[3] = 0.5 * fRoot;
+    fRoot = 0.5 / fRoot; // 1/(4w)
+    out[0] = (m[5] - m[7]) * fRoot;
+    out[1] = (m[6] - m[2]) * fRoot;
+    out[2] = (m[1] - m[3]) * fRoot;
+  } else {
+    // |w| <= 1/2
+    let i = 0;
+    if (m[4] > m[0]) i = 1;
+    if (m[8] > m[i * 3 + i]) i = 2;
+    let j = (i + 1) % 3;
+    let k = (i + 2) % 3;
+
+    fRoot = Math.sqrt(m[i * 3 + i] - m[j * 3 + j] - m[k * 3 + k] + 1.0);
+    out[i] = 0.5 * fRoot;
+    fRoot = 0.5 / fRoot;
+    out[3] = (m[j * 3 + k] - m[k * 3 + j]) * fRoot;
+    out[j] = (m[j * 3 + i] + m[i * 3 + j]) * fRoot;
+    out[k] = (m[k * 3 + i] + m[i * 3 + k]) * fRoot;
+  }
+
+  return out;
+}
+
+/**
+ * Creates a new quat initialized with the given values
+ *
+ * @param {Number} x X component
+ * @param {Number} y Y component
+ * @param {Number} z Z component
+ * @param {Number} w W component
+ * @returns {quat} a new quaternion
+ * @function
+ */
+const fromValues = fromValues$1;
+
+/**
+ * Adds two quat's
+ *
+ * @param {quat} out the receiving quaternion
+ * @param {ReadonlyQuat} a the first operand
+ * @param {ReadonlyQuat} b the second operand
+ * @returns {quat} out
+ * @function
+ */
+const add = add$1;
+
+/**
+ * Normalize a quat
+ *
+ * @param {quat} out the receiving quaternion
+ * @param {ReadonlyQuat} a quaternion to normalize
+ * @returns {quat} out
+ * @function
+ */
+const normalize = normalize$1;
+
+/**
+ * Sets a quaternion to represent the shortest rotation from one
+ * vector to another.
+ *
+ * Both vectors are assumed to be unit length.
+ *
+ * @param {quat} out the receiving quaternion.
+ * @param {ReadonlyVec3} a the initial vector
+ * @param {ReadonlyVec3} b the destination vector
+ * @returns {quat} out
+ */
+((function () {
+  let tmpvec3 = create$3();
+  let xUnitVec3 = fromValues$2(1, 0, 0);
+  let yUnitVec3 = fromValues$2(0, 1, 0);
+
+  return function (out, a, b) {
+    let dot$1 = dot(a, b);
+    if (dot$1 < -0.999999) {
+      cross$1(tmpvec3, xUnitVec3, a);
+      if (len(tmpvec3) < 0.000001) cross$1(tmpvec3, yUnitVec3, a);
+      normalize$3(tmpvec3, tmpvec3);
+      setAxisAngle(out, tmpvec3, Math.PI);
+      return out;
+    } else if (dot$1 > 0.999999) {
+      out[0] = 0;
+      out[1] = 0;
+      out[2] = 0;
+      out[3] = 1;
+      return out;
+    } else {
+      cross$1(tmpvec3, a, b);
+      out[0] = tmpvec3[0];
+      out[1] = tmpvec3[1];
+      out[2] = tmpvec3[2];
+      out[3] = 1 + dot$1;
+      return normalize(out, out);
+    }
+  };
+}))();
+
+/**
+ * Performs a spherical linear interpolation with two control points
+ *
+ * @param {quat} out the receiving quaternion
+ * @param {ReadonlyQuat} a the first operand
+ * @param {ReadonlyQuat} b the second operand
+ * @param {ReadonlyQuat} c the third operand
+ * @param {ReadonlyQuat} d the fourth operand
+ * @param {Number} t interpolation amount, in the range [0-1], between the two inputs
+ * @returns {quat} out
+ */
+((function () {
+  let temp1 = create();
+  let temp2 = create();
+
+  return function (out, a, b, c, d, t) {
+    slerp(temp1, a, d, t);
+    slerp(temp2, b, c, t);
+    slerp(out, temp1, temp2, 2 * t * (1 - t));
+
+    return out;
+  };
+}))();
+
+/**
+ * Sets the specified quaternion with values corresponding to the given
+ * axes. Each axis is a vec3 and is expected to be unit length and
+ * perpendicular to all other specified axes.
+ *
+ * @param {ReadonlyVec3} view  the vector representing the viewing direction
+ * @param {ReadonlyVec3} right the vector representing the local "right" direction
+ * @param {ReadonlyVec3} up    the vector representing the local "up" direction
+ * @returns {quat} out
+ */
+((function () {
+  let matr = create$2();
+
+  return function (out, view, right, up) {
+    matr[0] = right[0];
+    matr[3] = right[1];
+    matr[6] = right[2];
+
+    matr[1] = up[0];
+    matr[4] = up[1];
+    matr[7] = up[2];
+
+    matr[2] = -view[0];
+    matr[5] = -view[1];
+    matr[8] = -view[2];
+
+    return normalize(out, fromMat3(out, matr));
+  };
+}))();
+
+let rotateQuat = function(q, v) {
+  let temp = fromValues(v[0],v[1],v[2],0);
+  multiply(temp, q, temp);
+  multiply(temp, temp, conjugate(create(), q));
+  return temp;
+};
+
+let getXAndY = (target, ev) => {
+  let rect = target.getBoundingClientRect();
+  return [
+    ev.touches[0].clientX - rect.left,
+    ev.touches[0].clientY - rect.top,
+    0
+  ];
+};
+
+function Camera(
+  /** @type { HTMLCanvasElement } */
+  canvas
+) {
+  let cameraPosition        = fromValues$2(-500, 0, 0);
+  let cameraPositionDelta   = fromValues$2(0, 0, 0);
+  let cameraLookAt          = create$3();
+  let cameraDirection       = create$3();
+
+  let cameraUp              = fromValues$2(0, 1, 0);
+  let mousePosition         = create$3();
+  
+  let cameraPitch           = 0;
+  let cameraHeading         = 0;
+  
+  let isMoving              = false;
+
+  let view                  = create$4();
+  
+  this.update = () => {
+    cameraDirection = normalize$2(sub(cameraLookAt, cameraPosition));
+    
+    let axis = cross(cameraDirection, cameraUp);
+    let pitchQuat = setAxisAngle(create(), axis, cameraPitch);
+    let headingQuat = setAxisAngle(create(), cameraUp, cameraHeading);
+    
+    let temp = add(create(),pitchQuat, headingQuat);
+    normalize(temp, temp);
+    
+    cameraDirection = rotateQuat(temp, cameraDirection);
+    add$2(cameraPosition, cameraPosition, cameraPositionDelta);
+    add$2(cameraLookAt, cameraPosition, cameraDirection);
+    
+    cameraHeading *= 0.5;
+    cameraPitch *= 0.5;
+    
+    scale(cameraPositionDelta, cameraPositionDelta, 0.8);
+    
+    lookAt(
+      view,
+      cameraPosition,
+      cameraLookAt,
+      cameraUp
+    );
+  };
+  
+  let max = 3;
+  this.changePitch = (deg) => {
+    let degrees = Math.max(-max, Math.min(max, deg));
+    cameraPitch += degrees;
+    
+    if(cameraPitch >  360) cameraPitch -= 360;
+    if(cameraPitch < -360) cameraPitch += 360;
+  };
+  
+  this.changeHeading = (deg) => {
+    let degrees = Math.max(-max, Math.min(max, deg));
+    
+    if(
+      cameraPitch > 90 &&
+      cameraPitch < 270 ||
+      (cameraPitch < -90 && cameraPitch > -270)
+    ) {
+      cameraHeading -= degrees;
+    } else {
+      cameraHeading += degrees;
+    }
+    
+    if (cameraHeading >  360) cameraHeading -= 360;
+    if (cameraHeading < -360) cameraHeading += 360;
+  };
+  
+  let touchMove = (ev) => {
+    let x_y_z = getXAndY(canvas, ev);
+    let mouseDelta = sub(mousePosition, x_y_z);
+
+    if(isMoving) {
+      this.changeHeading(0.008 * mouseDelta[0]);
+      this.changePitch(0.008 * mouseDelta[1]);
+    }
+    mousePosition = x_y_z;
+  };
+  let touchEnd = () => {
+    if(isMoving) {
+      isMoving = false;
+      canvas.removeEventListener('touchmove', touchMove);
+      canvas.removeEventListener('touchend', touchEnd);
+      canvas.removeEventListener('touchcancel', touchEnd);
+    }
+  };
+  let touchStart = (ev) => {
+    mousePosition = getXAndY(canvas, ev);
+    isMoving = true;
+    canvas.addEventListener('touchmove', touchMove);
+    canvas.addEventListener('touchend', touchEnd);
+    canvas.addEventListener('touchcancel', touchEnd);
+  };
+  canvas.addEventListener('touchstart', touchStart);
+  
+  this.getVM = () => {
+    return view;
+  };
+}
 
 const canvas = document.getElementById('canvas');
+
+/** @type {WebGL2RenderingContext} */
 const gl = canvas.getContext('webgl2')
  ?? canvas.getContext('experimental-webgl2');
 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-const cam = Object.create(FlyingCamera).init(canvas);
+
+const cam = new Camera(canvas);
 
 function mainLoop() {
-  canvas.addEventListener('touchmove', cam.mouseMove);
-
   data.forEach((value) => {
     if(!value.isSun) {
       value.distance += 109;
@@ -1553,12 +1997,11 @@ function mainLoop() {
   sphereShader.disconnectShader();
   orbitShader.disconnectShader();
 
-  let proj = create$1();
+  let proj = create$4();
 
   const render = (now) => {
     Renderer.clear(gl);
     now *= 0.001;
-    cam.update(16);
 
     perspective(
       proj,
@@ -1566,7 +2009,8 @@ function mainLoop() {
       gl.canvas.width / gl.canvas.height,
       1, 80000
     );
-    let view = cam.viewMat;
+    cam.update();
+    let view = cam.getVM();
 
     sphereShader.connectShader();
     sphereShader.setUniformMatrix4fv(
@@ -1580,8 +2024,8 @@ function mainLoop() {
       view
     );
 
-    let modelSphere = create$1();
-    let modelOrbit = create$1();
+    let modelSphere = create$4();
+    let modelOrbit = create$4();
 
     data.forEach((value) => {
       if(!value.sphere) return;
@@ -1598,7 +2042,7 @@ function mainLoop() {
       translate(
         modelSphere,
         modelSphere,
-        fromValues(
+        fromValues$2(
           value.distance *
             cos(radians(value.axisTilt)) *
             sin(angleRot),
