@@ -14,7 +14,7 @@ class Sphere {
   radius = 0;
   name = '';
   stackCount = 100;
-  sectorCount = 100;
+  sectorCount = this.stackCount;
   texture = null;
   constructor(gl, _radius, _name, path) {
     this.radius = _radius;
