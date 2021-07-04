@@ -14,4 +14,31 @@
 top:200%;}
 
 #c43{ position:absolute;left:35%;top:190%;}
+#cassiopeia{
+    position: absolute;
+    left:95%;top:115%;
+    font-size: 30px;}
+
+#hydra{
+    font-size: 30px;
+    position: absolute;
+    left:25%;top:165%;}
+.hydra{
+    background-color: aqua;
+}
+
+.cassiopeia{
+    background-color: cadetblue;
+}
+.ursaminor{
+    background-color:lightblue;
+}
+
+.ursamajor{
+    background-color: lightseagreen;
+}
+.pegasus{
+    background-color:steelblue;
+}
+
 #c44{ position:absolute;left:37%;top:170%;}#c45{ position:absolute;left:45%;top:170%;}#c46{ position:absolute;left:50%;top:148%;}#c47{ position:absolute;left:40%;top:130%;}#c48{ position:absolute;left:45%;top:110%;}#c49{ position:absolute;left:48%;top:110%;}#c50{ position:absolute;left:50%;top:115%;}#c51{ position:absolute;left:53%;top:113%;}#c52{ position:absolute;left:52%;top:105%;}#c53{ position:absolute;left:49%;top:105%;}
