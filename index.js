@@ -6,3 +6,7 @@ function myFunction() {
     x.className = "topnav";
   }
 }
+
+const toggle = () => {
+  document.getElementById('list').classList.toggle('active');
+}

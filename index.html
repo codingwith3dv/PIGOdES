@@ -1,20 +1,51 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-  <head>
-    <meta charset="utf-8">
-    <title>PIGOdES</title>
-    <link rel="stylesheet" href="./style.css">
-  </head>
-  <body>
-    <div class="nav">
-      <p>PIGOdES</p>
-      <ul>
-        <li>Home</li>
-        <li>Features</li>
-        <li>About</li>
-      </ul>
+
+<head>
+  <meta charset="utf-8">
+  <title>PIGOdES</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</head>
+
+<body>
+  <div class="nav">
+    <p>PIGOdES</p>
+    <ion-icon name="menu-outline" onclick="toggle()"></ion-icon>
+    <div class="break"></div>
+    <ul id="list">
+      <li><a href="#home">Home</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a>About</a></li>
+    </ul>
+  </div>
+  <div class="body">
+    <div id="home" class="home"></div>
+    <div id="features" class="features">
+      <div class="f-container">
+        <div class="card">
+          <p class="title">SOLAR SYSTEM</p>
+          <img class="image" src="solar-system.jpeg" alt="" />
+          <p class="desc">
+            Explore the solar system from the sun to the moons of every planet.
+            Get the facts about these planets including their moons.
+          </p>
+          <a class="take-me-there" href="./stars.html">Go there</a>
+        </div>
+        <div class="card">
+          <p class="title">CONSTELLATIONS</p>
+          <img class="image" src="constellations.jpeg" alt="" />
+          <p class="desc">
+            Explore the constellations that we see on the night sky.
+            See them and learn about some new facts about them.
+          </p>
+          <a class="take-me-there" href="./constellation.html">Go there</a>
+        </div>
+      </div>
     </div>
-  </body>
-=======
+  </div>
+  <script src="index.js" type="text/javascript" charset="utf-8"></script>
 </body>
+
 </html>
