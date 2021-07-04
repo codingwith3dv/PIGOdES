@@ -52,8 +52,8 @@ function Camera(
     vec3.add(cameraPosition, cameraPosition, cameraPositionDelta);
     vec3.add(cameraLookAt, cameraPosition, cameraDirection);
 
-    cameraHeading *= 0.5;
-    cameraPitch *= 0.5;
+    cameraHeading *= 0.9;
+    cameraPitch *= 0.9;
 
     vec3.scale(cameraPositionDelta, cameraPositionDelta, 0.8);
 
@@ -87,8 +87,8 @@ function Camera(
       cameraHeading += degrees;
     }
 
-    if (cameraHeading >  360) cameraHeading -= 360;
-    if (cameraHeading < -360) cameraHeading += 360;
+    // if (cameraHeading >  360) cameraHeading -= 360;
+    // if (cameraHeading < -360) cameraHeading += 360;
   }
 
   let touchMove = (ev) => {
@@ -96,8 +96,8 @@ function Camera(
     let mouseDelta = util.sub(mousePosition, x_y_z);
 
     if(isMoving) {
-      this.changeHeading(0.008 * mouseDelta[0]);
-      this.changePitch(0.008 * mouseDelta[1]);
+      this.changeHeading(0.0008 * mouseDelta[0]);
+      this.changePitch(0.0008 * mouseDelta[1]);
     }
     mousePosition = x_y_z;
   }
