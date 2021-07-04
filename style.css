@@ -11,20 +11,28 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0 !important;
   padding: 0 !important;
-  min-height: 100vh;
+  height: 100vh;
   background: var(--light-black);
+  color: white;
 }
 
 .nav {
   width: 100%;
   color: white;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   padding: 20px;
+  background-color: var(--light-black);
+  transition: 0.3s;
 }
 
 .nav p {
@@ -36,6 +44,7 @@ body {
 .nav ul {
   list-style: none;
   display: flex;
+  order: 3;
 }
 
 .nav ul li {
@@ -52,4 +61,132 @@ body {
   background-color: var(--primary-color);
   color: black;
   padding: 10px auto;
+}
+
+.nav ul li a {
+  text-decoration: none;
+  color: white;
+}
+
+.nav ion-icon {
+  color: white;
+  font-size: 2rem;
+  display: none;
+  border-radius: 10px;
+}
+
+.body {
+  height: 100%;
+}
+
+.home {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                    url("bg.jpeg");
+  height: 75%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  position: relative;
+}
+
+.home::before {
+  content: 'Explore the solar system like never before';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.5rem;
+  text-align: center;
+  width: 100%;
+  padding: 10px;
+  font-family: Arial;
+  font-weight: bolder;
+  letter-spacing: 1.5px;
+}
+
+.features .f-container {
+  display: flex;
+  flex-direction: row;
+  margin: 30px;
+  justify-content: space-evenly;
+  padding-bottom: 30px;
+}
+
+.features .f-container .card {
+  max-width: 300px;
+  background-color: #F2F2F2;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.features .f-container .card .title {
+  font-size: 2rem;
+  color: white;
+  font-weight: 300;
+  position: absolute;
+  z-index: 10;
+  padding: 10px;
+}
+
+.features .f-container .card .image {
+  width: 100%;
+  filter: brightness(50%);
+  border-radius: 10px;
+}
+
+.features .f-container .card .desc {
+  color: #121212;
+  margin-top: 20px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+}
+
+.features .f-container .card .take-me-there {
+  padding: 10px 10px;
+  color: black;
+  display: inline-block;
+  text-decoration: none;
+  font-size: 1.3rem;
+  border-radius: 10px;
+  background-color: #00FFBB;
+  cursor: none;
+  font-weight: bolder;
+  margin-top: 20px;
+}
+
+.features .f-container .card .take-me-there:hover {
+  
+}
+
+@media (max-width: 720px) {
+  .nav ion-icon {
+    display: block;
+  }
+  .nav ul {
+    display: none;
+    order: 3;
+    margin-top: 10px;
+    width: 100%;
+  }
+  .nav ul.active {
+    display: flex;
+    flex-direction: column;
+  }
+  .nav ul.active > * {
+    margin: 0;
+  }
+  .break {
+    flex-basis: 100%;
+    height: 0;
+  }
+  .features .f-container {
+    flex-direction: column;
+  }
+  .features .f-container > * {
+    margin-top: 20px;
+  }
+  .features .f-container:nth-child(1) {
+    margin-top: 10px;
+  }
 }
