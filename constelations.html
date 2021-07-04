@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+    body {
+        background-color: #3c4874;
+    }
+    
+    .dot {
+        position: absolute;
+        width: 5px;
+        height: 5px;
+        background: rgb(197, 197, 197);
+    }
+    
+    .circle {
+        width: 20px;
+        height: 20px;
+        -webkit-border-radius: 25px;
+        -moz-border-radius: 25px;
+        border-radius: 25px;
+        background: rgb(255, 255, 255);
+    }
+    
+    .sta {
+        width: 20px;
+        height: 20px;
+        -webkit-border-radius: 25px;
+        -moz-border-radius: 25px;
+        border-radius: 25px;
+        background: rgb(255, 0, 0);
+    }
+</style>
+
+<head>
+    <link rel="stylesheet" href="ursa_minor.css">
+    <link rel="stylesheet" href="ursa_major.css">
+    <link rel="stylesheet" href="pegasus.css">
+    <link rel="stylesheet" href="constellations.css">
+
+
+</head>
+
+<body>
+
+
+
+    <script>
+        function createDot(x, y) {
+            var elem = document.createElement("div");
+            elem.setAttribute("class", "dot");
+            elem.setAttribute("style", "left:" + x + "px;top:" + y + "px;");
+            document.getElementsByTagName("body")[0].appendChild(elem);
+            return elem;
+        }
+
+
+        var Count_Num_Of_Dots = 0;
+
+        function Add_Dot() {
+
+            if (Count_Num_Of_Dots < 100000) {
+
+                createDot(Math.floor(Math.random() * 1900), Math.floor(Math.random() * 1670 + 60));
+                Count_Num_Of_Dots++;
+                document.getElementById('num_of_dots').value++;
+
+            } else {
+
+                clearInterval(My_Timer_Var);
+
+            }
+        }
+
+        var My_Timer_Var = setInterval(function() {
+            Add_Dot()
+        }, .05);
+    </script>
+    <div class="circle ursaminor c1"></div>
+    <div class="circle ursaminor c2"></div>
+    <div class="circle ursaminor c3"></div>
+    <div class="circle ursaminor c4"></div>
+    <div class="circle ursaminor c5"></div>
+    <div class="circle ursaminor c6"></div>
+    <div class="circle ursaminor c7"></div>
+
+    <div class="circle ursamajor c8"></div>
+    <div class="circle ursamajor c9"></div>
+    <div class="circle ursamajor c10"></div>
+    <div class="circle ursamajor c11"></div>
+    <div class="circle ursamajor c12"></div>
+    <div class="circle ursamajor c13"></div>
+    <div class="circle ursamajor c14"></div>
+
+    <div class="circle pegasus c15"></div>
+    <div class="circle pegasus c16"></div>
+    <div class="circle pegasus c17"></div>
+    <div class="circle pegasus c18"></div>
+    <div class="circle pegasus c19"></div>
+    <div class="circle pegasus c20"></div>
+    <div class="circle pegasus c21"></div>
+    <div class="circle pegasus c22"></div>
+    <div class="circle pegasus c23"></div>
+    <div class="circle pegasus c24"></div>
+    <div class="circle pegasus c25"></div>
+    <div class="circle pegasus c26"></div>
+    <div class="circle pegasus c27"></div>
+
+    <h5 id="ursaminor">URSA MINOR</h5>
+    <h5 id="ursamajor">URSA MAJOR</h5>
+    <h5 id="pegasus">PEGASUS</h5>
+    <h5 id="cassiopeia">CASSIOPEA</h5>
+    <h5 id="hydra">HYDRA</h5>
+
+    <div class="circle cassiopeia" id="c36"></div>
+    <div class="circle cassiopeia" id="c37"></div>
+    <div class="circle cassiopeia" id="c38"></div>
+    <div class="circle cassiopeia" id="c39"></div>
+    <div class="circle cassiopeia" id="c40"></div>
+
+    <div class="circle hydra" id="c42"></div>
+    <div class="circle hydra" id="c43"></div>
+    <div class="circle hydra" id="c44"></div>
+    <div class="circle hydra" id="c45"></div>
+    <div class="circle hydra" id="c46"></div>
+    <div class="circle hydra" id="c47"></div>
+    <div class="circle hydra" id="c48"></div>
+    <div class="circle hydra" id="c49"></div>
+    <div class="circle hydra" id="c50"></div>
+    <div class="circle hydra" id="c51"></div>
+    <div class="circle hydra" id="c52"></div>
+    <div class="circle hydra" id="c53"></div>
+</body>
+
+</html>
+
+</html>
