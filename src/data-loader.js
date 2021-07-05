@@ -27,7 +27,7 @@ const texPaths = [
       {
         'name': value.name,
         'distance': parseFloat(value['Distance from Sun']),
-        'radius': (parseFloat(value.Diameter) / 2) / (12756 / 2),
+        'radius': (parseFloat(value.Diameter) / 2) / (12756 / 8),
         'axisTilt': parseFloat(value['Obliquity to Orbit']),
         'orbPeriod': parseFloat(value['Orbital Period'].slice(0, -7)),
         'rotPeriod':(parseFloat(value['Rotation Period'].slice(0, -8)) / 24),

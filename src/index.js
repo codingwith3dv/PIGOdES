@@ -9,6 +9,7 @@ import * as util from './lib/utils/utils.js';
 import Camera from './lib/gl/camera/camera.js';
 
 const canvas = document.getElementById('canvas');
+const accordion_list = document.getElementById('accordion-list');
 
 /** @type {WebGL2RenderingContext} */
 const gl = canvas.getContext('webgl2')
@@ -22,6 +23,23 @@ function mainLoop() {
     if(!value.isSun) {
       value.distance += 109;
       value.radius *= 1;
+
+      // creating the info of the planets
+      let child = document.createElement('div');
+      let summary = document.createElement('button');
+      summary.innerHTML = value.name;
+      summary.classList.add('full-info-button');
+      child.appendChild(summary);
+      let full_info = `name: ${value.name}
+      radius: ${parseInt(value.radius * (12756 / 8))}
+      distance from sun: ${parseInt(value.distance - 109)}
+      orbital inclination: ${value.axisTilt}
+      `;
+      let full_info_elem = document.createElement('div');
+      full_info_elem.innerText = full_info;
+      full_info_elem.classList.add('full-info');
+      child.appendChild(full_info_elem);
+      accordion_list.appendChild(child);
     } else {
       value.radius = 109;
     }
