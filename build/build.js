@@ -120,6 +120,8 @@ class Renderer {
   static clear(gl) {
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     Renderer.resizeToDisplaySize(gl.canvas);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -1125,7 +1127,7 @@ class Orbit {
     vb.disconnectVertexBuffer();
   }
   render(gl, shader) {
-    Renderer.drawArrays(gl, this.vao, gl.LINES, this.sectorCount);
+    Renderer.drawArrays(gl, this.vao, gl.LINE_LOOP, this.sectorCount);
   }
 }
 
@@ -1879,8 +1881,8 @@ function Camera(
     add$2(cameraPosition, cameraPosition, cameraPositionDelta);
     add$2(cameraLookAt, cameraPosition, cameraDirection);
 
-    cameraHeading *= 0.5;
-    cameraPitch *= 0.5;
+    cameraHeading *= 0.9;
+    cameraPitch *= 0.9;
 
     scale(cameraPositionDelta, cameraPositionDelta, 0.8);
 
@@ -1914,8 +1916,8 @@ function Camera(
       cameraHeading += degrees;
     }
 
-    if (cameraHeading >  360) cameraHeading -= 360;
-    if (cameraHeading < -360) cameraHeading += 360;
+    // if (cameraHeading >  360) cameraHeading -= 360;
+    // if (cameraHeading < -360) cameraHeading += 360;
   };
 
   let touchMove = (ev) => {
@@ -1923,8 +1925,8 @@ function Camera(
     let mouseDelta = sub(mousePosition, x_y_z);
 
     if(isMoving) {
-      this.changeHeading(0.008 * mouseDelta[0]);
-      this.changePitch(0.008 * mouseDelta[1]);
+      this.changeHeading(0.0008 * mouseDelta[0]);
+      this.changePitch(0.0008 * mouseDelta[1]);
     }
     mousePosition = x_y_z;
   };
