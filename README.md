@@ -1,6 +1,8 @@
 # About
 Explore our solar system and some of the most common star constellations in the web by your own hands. It's made with JavaScript, CSS and of course HTML.
 
+Please vote for us [Vote for us](https://twtcodejam.net/timathon/vote/1044/)
+
 # Setup
 Just gon on this link https://codingwith3dv.github.io/PIGOdES and try it out.
 
