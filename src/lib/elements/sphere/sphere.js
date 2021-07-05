@@ -24,6 +24,7 @@ class Sphere {
   }
   init(gl) {
     let vertices = [];
+    let invRadius = 1 / this.radius;
     let xy;
     let z;
     let x;
@@ -50,6 +51,10 @@ class Sphere {
         
         vertices.push(j / this.sectorCount);
         vertices.push(i / this.stackCount);
+        
+        vertices.push(x * invRadius);
+        vertices.push(y * invRadius);
+        vertices.push(z * invRadius);
       }
     }
     
@@ -84,6 +89,7 @@ class Sphere {
     let vbl = new VertexBufferLayout(gl);
     vbl.pushBack(3, gl.FLOAT, false);
     vbl.pushBack(2, gl.FLOAT, false);
+    vbl.pushBack(3, gl.FLOAT, false);
     this.vao.addBuffer(gl, vb, vbl);
     
     this.ibo = new IndexBuffer(

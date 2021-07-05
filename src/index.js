@@ -153,6 +153,16 @@ function mainLoop() {
         'u_image',
         0
       );
+      sphereShader.setUniformVec3(
+        gl,
+        'viewPos',
+        cam.getPos()
+      );
+      sphereShader.setBool(
+        gl,
+        'isSun',
+        value.isSun
+      );
       value.sphere.render(gl, sphereShader);
 
       mat4.rotateZ(

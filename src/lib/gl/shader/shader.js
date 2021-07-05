@@ -114,6 +114,32 @@ function Shader(
       img
     );
   }
+  
+  this.setUniformVec3 = (
+    /** @type {WebGL2RenderingContext} */
+    gl,
+    name,
+    val
+  ) => {
+    gl.uniform3f(
+      getLocation(id, name),
+      val[0],
+      val[1],
+      val[2]
+    );
+  }
+  
+  this.setBool = (
+    /** @type {WebGL2RenderingContext} */
+    gl,
+    name,
+    val
+  ) => {
+    gl.uniform1i(
+      getLocation(id, name),
+      val ? 1 : 0
+    );
+  }
 }
 
 export {

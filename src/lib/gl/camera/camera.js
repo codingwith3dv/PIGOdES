@@ -23,7 +23,7 @@ function Camera(
   /** @type { HTMLCanvasElement } */
   canvas
 ) {
-  let cameraPosition        = vec3.fromValues(-500, 0, 0);
+  let cameraPosition        = vec3.fromValues(-200, 0, 0);
   let cameraPositionDelta   = vec3.fromValues(0, 0, 0);
   let cameraLookAt          = vec3.create();
   let cameraDirection       = vec3.create();
@@ -145,6 +145,9 @@ function Camera(
 
   this.getVM = () => {
     return view;
+  }
+  this.getPos = () => {
+    return cameraPosition;
   }
 }
 
