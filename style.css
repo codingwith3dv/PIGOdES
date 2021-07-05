@@ -81,8 +81,8 @@ body {
 
 .home {
   background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
-                    url("bg.jpeg");
-  height: 75%;
+                    url("img/bg.jpeg");
+  height: 80%;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -104,6 +104,10 @@ body {
   letter-spacing: 1.5px;
 }
 
+.features {
+  margin-top: 50px;
+}
+
 .features .f-container {
   display: flex;
   flex-direction: row;
@@ -119,13 +123,14 @@ body {
   border-radius: 10px;
 }
 
-.features .f-container .card .title {
-  font-size: 2rem;
+.features .f-container .card .card-title {
+  font-size: 1.7rem;
   color: white;
   font-weight: 300;
   position: absolute;
   z-index: 10;
   padding: 10px;
+  font-family: Helvetica;
 }
 
 .features .f-container .card .image {
@@ -147,19 +152,95 @@ body {
   color: black;
   display: inline-block;
   text-decoration: none;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   border-radius: 10px;
   background-color: #00FFBB;
   cursor: none;
   font-weight: bolder;
   margin-top: 20px;
+  font-family: Roboto;
 }
 
 .features .f-container .card .take-me-there:hover {
-  
+  opacity: 0.6;
 }
 
-@media (max-width: 720px) {
+.features .title {
+  padding-left: 30px;
+  font-size: 1.7rem;
+  font-family: Arial;
+}
+
+.features .title::after {
+  content: '';
+  width: calc(100% - 30px);
+  border-bottom: 2px solid white;
+  display: block;
+}
+
+.about {
+  background-color: var(--light-black);
+  width: 100%;
+}
+
+.about .title {
+  padding-left: 30px;
+  font-size: 1.7rem;
+  font-family: Arial;
+}
+
+.about .title::after {
+  content: '';
+  width: calc(100% - 30px);
+  border-bottom: 2px solid white;
+  display: block;
+}
+
+.about .devs {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-around;
+  margin: 10px;
+}
+
+.about .devs .cont {
+  display: flex;
+  background-color: #E2E2E2;
+  max-width: 300px;
+  min-width: 300px;
+  border-radius: 10px;
+  margin: 10px;
+  padding: 10px;
+}
+
+.about .devs div .dev-image {
+  width: 50px;
+  border-radius: 50%;
+}
+
+.about .devs .cont div {
+  display: flex;
+  flex-direction: column;
+}
+
+.about .devs .cont div .name {
+  color: black;
+  padding-left: 20px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  font-family: Roboto;
+}
+
+.about .devs .cont div .desc {
+  padding-left: 20px;
+  color: black;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-family: Roboto;
+}
+
+@media (max-width: 768px) {
   .nav ion-icon {
     display: block;
   }
@@ -181,12 +262,17 @@ body {
     height: 0;
   }
   .features .f-container {
+    width: auto;
     flex-direction: column;
+    align-items: center;
   }
   .features .f-container > * {
     margin-top: 20px;
   }
   .features .f-container:nth-child(1) {
     margin-top: 10px;
+  }
+  .about .devs {
+    flex-direction: column;
   }
 }
