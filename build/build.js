@@ -975,7 +975,7 @@ function Texture(
   };
 }
 
-let source$1 = {
+let source$2 = {
   vertexSource: `#version 300 es
       layout(location = 0) in vec3 a_position;
       layout(location = 1) in vec2 a_texCoords;
@@ -1133,7 +1133,7 @@ class Sphere {
   }
 }
 
-let source = {
+let source$1 = {
   vertexSource: `#version 300 es
       layout(location = 0) in vec3 a_position;
       
@@ -1190,6 +1190,75 @@ class Orbit {
   }
   render(gl, shader) {
     Renderer.drawArrays(gl, this.vao, gl.LINE_LOOP, this.sectorCount);
+  }
+}
+
+let source = {
+  vertexSource: `#version 300 es
+      layout(location = 0) in float base_angle;
+      layout(location = 1) in float offsetX;
+      layout(location = 2) in float offsetZ;
+      
+      uniform mat4 u_model;
+      uniform mat4 u_view;
+      uniform mat4 u_proj;
+      
+      out vec2 offset;
+      
+      void main(void) {
+        vec3 p;
+        offset = vec2(offsetX, offsetZ);
+        p.x = (50.0 + offsetX) * cos(base_angle);
+        p.z = (50.0 + offsetZ) * sin(base_angle);
+        p.y += (50.0 + offsetX / 1.0) * cos(base_angle);
+      
+        gl_Position = u_proj * u_view * u_model * vec4(p, 1.0);
+        gl_PointSize = 3.0;
+      }
+      `,
+  fragmentSource: `#version 300 es
+    precision highp float;
+      
+      out vec4 color;
+      void main(void) {
+        color = vec4(1.0, 1.0, 1.0, 1.0);
+      }
+      `
+};
+
+class Rings {
+  vao = null;
+  sectorCount = 1000;
+  constructor(gl) {
+    this.init(gl);
+  }
+  
+  init(gl) {
+    let vertices = [];
+    for(let i = 0; i < this.sectorCount; i++) {
+      var theta = Math.random() * 2 * Math.PI;
+      
+      vertices.push(theta);
+      vertices.push((Math.random() - 0.5) * 80);
+      vertices.push((Math.random() - 0.5) * 80);
+    }
+    
+    this.vao = new VertexArray(gl);
+    let vb = new VertexBuffer(
+      gl,
+      new Float32Array(vertices)
+    );
+    let vbl = new VertexBufferLayout(gl);
+    vbl.pushBack(1, gl.FLOAT, false);
+    vbl.pushBack(1, gl.FLOAT, false);
+    vbl.pushBack(1, gl.FLOAT, false);
+    this.vao.addBuffer(gl, vb, vbl);
+    
+    this.vao.disconnectVertexArray();
+    vb.disconnectVertexBuffer();
+  }
+  render(gl, shader) {
+    Renderer.drawArrays(gl, this.vao, gl.POINT, this.sectorCount);
   }
 }
 
@@ -2088,6 +2157,9 @@ function mainLoop() {
       value.distance,
       value.name
     );
+    if(value.name === 'SATURN') {
+      value.rings = new Rings(gl);
+    }
   });
 
   let angleRot = 0;
@@ -2095,10 +2167,15 @@ function mainLoop() {
 
   let sphereShader = new Shader(
     gl,
+    source$2.vertexSource,
+    source$2.fragmentSource
+  );
+  let orbitShader = new Shader(
+    gl,
     source$1.vertexSource,
     source$1.fragmentSource
   );
-  let orbitShader = new Shader(
+  let ringsShader = new Shader(
     gl,
     source.vertexSource,
     source.fragmentSource
@@ -2106,6 +2183,7 @@ function mainLoop() {
 
   sphereShader.disconnectShader();
   orbitShader.disconnectShader();
+  ringsShader.disconnectShader();
 
   let proj = create$4();
 
@@ -2173,8 +2251,29 @@ function mainLoop() {
         modelSphere,
         angleRotSelf
       );
+      
+      if(value.name === 'SATURN') {
+        ringsShader.connectShader();
+        ringsShader.setUniformMatrix4fv(
+          gl,
+          'u_proj',
+          proj
+        );
+        ringsShader.setUniformMatrix4fv(
+          gl,
+          'u_view',
+          view
+        );
+        ringsShader.setUniformMatrix4fv(
+          gl,
+          'u_model',
+          modelSphere
+        );
+        value.rings.render(gl, ringsShader);
+      }
+      
       rotateX(modelSphere, modelSphere, radians(90));
-
+      
       sphereShader.connectShader();
       sphereShader.setUniformMatrix4fv(
         gl,

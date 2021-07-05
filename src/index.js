@@ -4,6 +4,7 @@ import * as mat4 from './lib/3d/mat4.js';
 import * as vec3 from './lib/3d/vec3.js';
 import Sphere, { SphereSource } from './lib/elements/sphere/sphere.js';
 import Orbit, { OrbitSource } from './lib/elements/orbit/orbit.js';
+import Rings, { RingsSource } from './lib/elements/rings/rings.js';
 import { data } from './data-loader.js';
 import * as util from './lib/utils/utils.js';
 import Camera from './lib/gl/camera/camera.js';
@@ -54,6 +55,9 @@ function mainLoop() {
       value.distance,
       value.name
     );
+    if(value.name === 'SATURN') {
+      value.rings = new Rings(gl);
+    }
   });
 
   let angleRot = 0;
@@ -70,9 +74,15 @@ function mainLoop() {
     OrbitSource.vertexSource,
     OrbitSource.fragmentSource
   );
+  let ringsShader = new Shader(
+    gl,
+    RingsSource.vertexSource,
+    RingsSource.fragmentSource
+  );
 
   sphereShader.disconnectShader();
   orbitShader.disconnectShader();
+  ringsShader.disconnectShader();
 
   let proj = mat4.create();
 
@@ -140,8 +150,29 @@ function mainLoop() {
         modelSphere,
         angleRotSelf
       );
+      
+      if(value.name === 'SATURN') {
+        ringsShader.connectShader();
+        ringsShader.setUniformMatrix4fv(
+          gl,
+          'u_proj',
+          proj
+        );
+        ringsShader.setUniformMatrix4fv(
+          gl,
+          'u_view',
+          view
+        );
+        ringsShader.setUniformMatrix4fv(
+          gl,
+          'u_model',
+          modelSphere
+        );
+        value.rings.render(gl, ringsShader);
+      }
+      
       mat4.rotateX(modelSphere, modelSphere, util.radians(90));
-
+      
       sphereShader.connectShader();
       sphereShader.setUniformMatrix4fv(
         gl,
