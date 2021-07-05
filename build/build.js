@@ -707,7 +707,7 @@ function cross$1(out, a, b) {
  * Alias for {@link vec3.length}
  * @function
  */
-const len = length;
+const len$1 = length;
 
 /**
  * Perform some operation over an array of vec3s.
@@ -1360,7 +1360,7 @@ const texPaths = [
       {
         'name': value.name,
         'distance': parseFloat(value['Distance from Sun']),
-        'radius': (parseFloat(value.Diameter) / 2) / (12756 / 2),
+        'radius': (parseFloat(value.Diameter) / 2) / (12756 / 8),
         'axisTilt': parseFloat(value['Obliquity to Orbit']),
         'orbPeriod': parseFloat(value['Orbital Period'].slice(0, -7)),
         'rotPeriod':(parseFloat(value['Rotation Period'].slice(0, -8)) / 24),
@@ -1757,7 +1757,7 @@ const normalize = normalize$1;
     let dot$1 = dot(a, b);
     if (dot$1 < -0.999999) {
       cross$1(tmpvec3, xUnitVec3, a);
-      if (len(tmpvec3) < 0.000001) cross$1(tmpvec3, yUnitVec3, a);
+      if (len$1(tmpvec3) < 0.000001) cross$1(tmpvec3, yUnitVec3, a);
       normalize$3(tmpvec3, tmpvec3);
       setAxisAngle(out, tmpvec3, Math.PI);
       return out;
@@ -1978,19 +1978,37 @@ function Camera(
 }
 
 const canvas = document.getElementById('canvas');
+const accordion_list = document.getElementById('accordion-list');
 
 /** @type {WebGL2RenderingContext} */
-const gl = canvas.getContext('webgl2')
- ?? canvas.getContext('experimental-webgl2');
+const gl = canvas.getContext('webgl2') ??
+  canvas.getContext('experimental-webgl2');
 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
 const cam = new Camera(canvas);
 
 function mainLoop() {
   data.forEach((value) => {
-    if(!value.isSun) {
+    if (!value.isSun) {
       value.distance += 109;
       value.radius *= 1;
+
+      // creating the info of the planets
+      let child = document.createElement('div');
+      let summary = document.createElement('button');
+      summary.innerHTML = value.name;
+      summary.classList.add('full-info-button');
+      child.appendChild(summary);
+      let full_info = `name: ${value.name}
+      radius: ${parseInt(value.radius * (12756 / 8))}
+      distance from sun: ${parseInt(value.distance - 109)}
+      orbital inclination: ${value.axisTilt}
+      `;
+      let full_info_elem = document.createElement('div');
+      full_info_elem.innerText = full_info;
+      full_info_elem.classList.add('full-info');
+      child.appendChild(full_info_elem);
+      accordion_list.appendChild(child);
     } else {
       value.radius = 109;
     }
@@ -2055,11 +2073,11 @@ function mainLoop() {
     let modelOrbit = create$4();
 
     data.forEach((value) => {
-      if(!value.sphere) return;
+      if (!value.sphere) return;
       identity(modelSphere);
       identity(modelOrbit);
 
-      if(!value.isSun) {
+      if (!value.isSun) {
         angleRot = (2 * PI * now / value.orbPeriod);
         angleRotSelf = (2 * PI * now * value.rotPeriod);
       } else {
@@ -2071,11 +2089,11 @@ function mainLoop() {
         modelSphere,
         fromValues$2(
           value.distance *
-            cos(radians(value.axisTilt)) *
-            sin(angleRot),
+          cos(radians(value.axisTilt)) *
+          sin(angleRot),
           value.distance *
-            sin(radians(value.axisTilt)) *
-            sin(angleRot),
+          sin(radians(value.axisTilt)) *
+          sin(angleRot),
           value.distance * cos(angleRot),
         )
       );
@@ -2127,7 +2145,7 @@ function mainLoop() {
         'u_model',
         modelOrbit
       );
-      if(!value.isSun && value.orbit)
+      if (!value.isSun && value.orbit)
         value.orbit.render(gl, orbitShader);
     });
 
@@ -2138,3 +2156,27 @@ function mainLoop() {
 }
 
 mainLoop();
+
+let elems = document.getElementsByClassName('full-info-button');
+let len = elems.length;
+for (let i = 0; i < len; i++) {
+  elems[i].addEventListener('click', (ev) => {
+    let next = ev.currentTarget.nextSibling;
+    for (let j = 0; j < len; j++) {
+      if (elems[j].nextSibling.style.height && elems[j] !== ev.currentTarget) {
+        elems[j].nextSibling.style.height = null;
+        elems[j].nextSibling.style.margin = null;
+        elems[j].nextSibling.style.padding = null;
+      }
+    }
+    if (next.style.height) {
+      next.style.height = null;
+      next.style.margin = null;
+      next.style.padding = null;
+    } else {
+      next.style.height = next.scrollHeight + 'px';
+      next.style.margin = '5px';
+      next.style.padding = '10px';
+    }
+  });
+}
