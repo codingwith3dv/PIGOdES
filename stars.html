@@ -1,80 +1,73 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-    <title></title>
-    <style type="text/css">
-      html, body {
-        width: 100%;
-        height: 100%;
-        padding: 0;
-        margin: 0;
-        color: white;
-        font-family: Helvetica;
-      }
-      #canvas {
-        width: 100%;
-        height: 100%;
-        padding: 0;
-        margin: 0;
-      }
-      .info {
-        z-index: 100;
-        position: absolute;
-        top: 0;
-        left: 0;
-      }
-      .info div .full-info-button {
-        background-color: #333333;
-        max-width: 300px;
-        width: 300px;
-        padding: 10px;
-        margin: 5px;
-        border-radius: 5px;
-        outline: 0;
-        border: 0;
-        text-align: left;
-        color: white;
-      }
-      .info div .full-info-button:hover {
-        opacity: 0.6;
-        color: white;
-      }
-      .info div .full-info {
-        padding: 10px;
-        background-color: #121212;
-        max-width: 300px;
-        margin: 5px;
-        display: none;
-      }
-    </style>
-  </head>
-  <body>
-    <canvas id="canvas">
-    </canvas>
 
-    <div class="info">
-      <div id="accordion-list">
-      </div>
-    </div>
-
-    <script src="src/index.js" type="module" charset="utf-8"></script>
-    <script type="text/javascript">
-    var planet_lists = document.querySelectorAll("full-info-buttons");
-    var i;
-
-    for (i = 0; i < planet_lists.length; i++) {
-      planet_lists[i].addEventListener("click", function() {
-        this.classList.toggle("active");
-        var content = this.nextSibling;
-        console.log("content")
-        if (content.style.display === "block") {
-          content.style.display = "none";
-        } else {
-          content.style.display = "block";
-        }
-      });
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title></title>
+  <style type="text/css">
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      margin: 0;
+      color: white;
+      font-family: Helvetica;
     }
-    </script>
-  </body>
+
+    #canvas {
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      margin: 0;
+    }
+
+    .info {
+      z-index: 100;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .info #accordion-list .full-info-button {
+      background-color: #333333;
+      max-width: 300px;
+      width: 300px;
+      padding: 10px;
+      margin: 5px;
+      border-radius: 5px;
+      outline: 0;
+      border: 0;
+      text-align: left;
+      color: white;
+    }
+
+    .info #accordion-list .full-info-button:hover {
+      opacity: 0.6;
+      color: white;
+    }
+
+    .info #accordion-list .full-info {
+      /* padding: 10px; */
+      height: 0;
+      background-color: #121212;
+      max-width: 300px;
+      /* margin: 5px; */
+      overflow: hidden;
+      transition: height 0.7s ease, padding 0.7s ease, margin 0.7s ease;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas">
+  </canvas>
+  <div class="info">
+    <div id="accordion-list">
+    </div>
+  </div>
+  <script src="build/build.js" type="module" charset="utf-8"></script>
+</body>
+
 </html>

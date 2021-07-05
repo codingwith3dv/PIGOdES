@@ -12,15 +12,15 @@ const canvas = document.getElementById('canvas');
 const accordion_list = document.getElementById('accordion-list');
 
 /** @type {WebGL2RenderingContext} */
-const gl = canvas.getContext('webgl2')
- ?? canvas.getContext('experimental-webgl2');
+const gl = canvas.getContext('webgl2') ??
+  canvas.getContext('experimental-webgl2');
 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
 const cam = new Camera(canvas);
 
 function mainLoop() {
   data.forEach((value) => {
-    if(!value.isSun) {
+    if (!value.isSun) {
       value.distance += 109;
       value.radius *= 1;
 
@@ -105,11 +105,11 @@ function mainLoop() {
     let modelOrbit = mat4.create();
 
     data.forEach((value) => {
-      if(!value.sphere) return;
+      if (!value.sphere) return;
       mat4.identity(modelSphere);
       mat4.identity(modelOrbit);
 
-      if(!value.isSun) {
+      if (!value.isSun) {
         angleRot = (2 * util.PI * now / value.orbPeriod);
         angleRotSelf = (2 * util.PI * now * value.rotPeriod);
       } else {
@@ -121,11 +121,11 @@ function mainLoop() {
         modelSphere,
         vec3.fromValues(
           value.distance *
-            util.cos(util.radians(value.axisTilt)) *
-            util.sin(angleRot),
+          util.cos(util.radians(value.axisTilt)) *
+          util.sin(angleRot),
           value.distance *
-            util.sin(util.radians(value.axisTilt)) *
-            util.sin(angleRot),
+          util.sin(util.radians(value.axisTilt)) *
+          util.sin(angleRot),
           value.distance * util.cos(angleRot),
         )
       );
@@ -177,7 +177,7 @@ function mainLoop() {
         'u_model',
         modelOrbit
       );
-      if(!value.isSun && value.orbit)
+      if (!value.isSun && value.orbit)
         value.orbit.render(gl, orbitShader);
     });
 
@@ -188,3 +188,27 @@ function mainLoop() {
 }
 
 mainLoop();
+
+let elems = document.getElementsByClassName('full-info-button');
+let len = elems.length;
+for (let i = 0; i < len; i++) {
+  elems[i].addEventListener('click', (ev) => {
+    let next = ev.currentTarget.nextSibling;
+    for (let j = 0; j < len; j++) {
+      if (elems[j].nextSibling.style.height && elems[j] !== ev.currentTarget) {
+        elems[j].nextSibling.style.height = null;
+        elems[j].nextSibling.style.margin = null;
+        elems[j].nextSibling.style.padding = null;
+      }
+    }
+    if (next.style.height) {
+      next.style.height = null;
+      next.style.margin = null;
+      next.style.padding = null;
+    } else {
+      next.style.height = next.scrollHeight + 'px';
+      next.style.margin = '5px';
+      next.style.padding = '10px';
+    }
+  });
+}
